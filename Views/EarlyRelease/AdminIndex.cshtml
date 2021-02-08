@@ -1,0 +1,89 @@
+﻿@model AdminIndexERViewModel
+
+@{
+    ViewBag.PageTitle = "All Early Releases";
+}
+
+<h1>Summary</h1>
+
+<div class="table-responsive">
+    <table class="table table-striped table-hover">
+        <thead class="thead-dark text-center">
+            <tr>
+                <th>Employee</th>
+                <th>Total Hours Missed</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var user in Model.applicationUsers)
+            {
+                if (Model.earlyReleases.Where(e => e.ApplicationUserID == user.Id).Any())
+                {
+                    <tr>
+                        <td>@user.Email</td>
+                        @{ float totalTimeOff = 0; }
+                        @foreach (var er in Model.earlyReleases.Where(e => e.ApplicationUserID == user.Id))
+                        {
+                            totalTimeOff += er.TimeMissed;
+                        }
+                        <td class="text-center">@totalTimeOff</td>
+                    </tr>
+                }
+            }
+        </tbody>
+    </table>
+</div>
+
+<h1>@ViewBag.PageTitle</h1>
+
+@if (Model.earlyReleases.Any())
+{
+    <form asp-action="AdminIndex" method="get">
+        <div class="form-actions no-color">
+            <p>
+                Find by name: <input type="text" name="SearchString" value="@ViewData["CurrentFilter"]" />
+                @*<input type="submit" value="Search" class="btn btn-default" />*@
+                <button type="submit" value="Search" class="btn btn-primary">Search</button> |
+                <a asp-action="AdminIndex" class="btn btn-info">Full List</a>
+            </p>
+        </div>
+    </form>
+
+    <div class="table-responsive">
+        <table class="table table-striped table-hover">
+            <thead class="thead-dark text-center">
+                <tr>
+                    <th>Employee Email</th>
+                    <th>Date</th>
+                    <th>Time</th>
+                    <th>Reason</th>
+                    <th>Hours Missed</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var singleER in Model.earlyReleases)
+                {
+                    ApplicationUser ERUser = Model.applicationUsers.First(u => u.Id == singleER.ApplicationUserID);
+                    <tr>
+                        <td>@ERUser.Email</td>
+                        <td class="text-center">@singleER.EarlyReleaseDateTime.ToShortDateString()</td>
+                        <td class="text-center">@singleER.EarlyReleaseDateTime.ToShortTimeString()</td>
+                        @if (singleER.Reason == "") 
+                        { 
+                            <td class="text-center">Not Provided</td>
+                        } 
+                        else 
+                        { 
+                            <td class="text-center">@singleER.Reason</td>
+                        }
+                        <td class="text-center">@singleER.TimeMissed</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+else
+{
+    <h2>No Personal/Vacation Requests at the moment.</h2>
+}

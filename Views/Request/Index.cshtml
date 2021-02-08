@@ -1,0 +1,71 @@
+﻿@{
+    ViewBag.PageTitle = "Home Page";
+}
+@model IndexRequestViewModel
+
+<h1>Actions</h1>
+<div class="row text-center" style="padding: 30px 0px;">
+    <div class="col-md-4">
+        <a asp-controller="Request" asp-action="Create" class="btn btn-primary">New Vacation Request</a>
+    </div>
+    <div class="col-md-4">
+        <a asp-controller="Request" asp-action="CallInSickFull" class="btn btn-primary">Take Sick Day</a>
+    </div>
+    <div class="col-md-4">
+        <a asp-controller="EarlyRelease" asp-action="Create" class="btn btn-primary">Leave Work Early</a>
+    </div>
+</div>
+
+<h1>My Summary</h1>
+<div class="row text-center" style="padding: 30px 0px;">
+    <div class="col-md-6">
+        <h4>Personal/Vacation Time Left</h4>
+        <h5 class="card-title">@Model.VacationDaysLeft days</h5>
+        <h4>Personal/Vacation Time Used</h4>
+        <h5 class="card-title">@Model.VacationDaysUsed days</h5>
+    </div>
+    <div class="col-md-6">
+        <h4>Sick Days Left</h4>
+        <h5 class="card-title">@Model.SickDaysLeft days</h5>
+        <h4>Sick Days Used</h4>
+        <h5 class="card-title">@Model.SickDaysUsed days</h5>
+    </div>
+</div>
+
+<h1>My Requests</h1>
+@if (Model.requests.Any())
+{
+    <div class="table-responsive">
+        <table class="table table-striped table-hover">
+            <thead class="thead-dark">
+                <tr>
+                    <th>ID</th>
+                    <th>Start Date</th>
+                    <th>End Date</th>
+                    <th>Edit</th>
+                    <th>Delete</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var req in Model.requests)
+                {
+                    <tr>
+                        <td>@req.RequestId</td>
+                        <td>@req.StartDate.ToString("d")</td>
+                        <td>@req.EndDate.ToString("d")</td>
+                        <td><a asp-controller="Request" asp-action="Edit" asp-route-id="@req.RequestId" class="btn btn-info">Edit</a></td>
+                        <td>
+                            <form method="post" asp-controller="Request" asp-action="Delete" asp-route-id="@req.RequestId">
+                                <button type="submit" class="btn btn-danger" onclick="return confirm('Are you sure you want to delete Request ID: @req.RequestId?')">Delete</button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+else
+{
+    <h2>No Requests Yet</h2>
+}

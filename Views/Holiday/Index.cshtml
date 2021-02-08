@@ -1,0 +1,38 @@
+﻿@model HolidayIndexViewModel
+
+<a asp-controller="Holiday" asp-action="Create" class="btn btn-primary">New Holiday</a>
+
+@if (Model.holidays.Any())
+{
+    <div class="table-responsive">
+        <table class="table table-striped table-hover">
+            <thead class="thead-dark">
+                <tr>
+                    <th>Date</th>
+                    <th>Holiday</th>
+                    <th>Edit</th>
+                    <th>Delete</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var hol in Model.holidays)
+                {
+                    <tr>
+                        <td>@hol.DateOfHoliday.ToString("d")</td>
+                        <td>@hol.NameOfHoliday</td>
+                        <td><a asp-controller="Holiday" asp-action="Edit" asp-route-id="@hol.HolidayID" class="btn btn-info">Edit</a></td>
+                        <td>
+                            <form method="post" asp-controller="Holiday" asp-action="Delete" asp-route-id="@hol.HolidayID">
+                                <button type="submit" class="btn btn-danger" onclick="return confirm('Are you sure you want to delete Request ID: @hol.DateOfHoliday?')">Delete</button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+else
+{
+    <h2>No Holidays Yet</h2>
+}

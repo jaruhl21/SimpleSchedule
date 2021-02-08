@@ -1,0 +1,23 @@
+﻿@inject SignInManager<ApplicationUser> signInManager;
+@model CreateRequestViewModel
+@{
+    ViewBag.PageTitle = "New Request";
+    DateTime current = DateTime.Now;
+}
+<h1>@ViewBag.PageTitle</h1>
+
+<div asp-validation-summary="All" class="text-danger"></div>
+
+<form asp-controller="Request" asp-action="Create" method="post">
+    <div class="form-group">
+        <label asp-for="StartDate">Start of Personal/Vacation Time</label>
+        <input asp-for="StartDate" class="form-control" min="@current.ToString("yyyy-MM-dd")" max="@current.Year-12-31" />
+        <span asp-validation-for="StartDate" class="text-danger"></span>
+    </div>
+    <div class="form-group">
+        <label asp-for="EndDate">End of Personal/Vacation Time (select same day if only 1 day)</label>
+        <input asp-for="EndDate" class="form-control" min="@current.ToString("yyyy-MM-dd")" max="@current.Year-12-31" />
+        <span asp-validation-for="EndDate" class="text-danger"></span>
+    </div>
+    <button type="submit" class="btn btn-primary">Submit Request</button>
+</form>

@@ -1,0 +1,17 @@
+﻿@model Holiday
+
+<div asp-validation-summary="All" class="text-danger"></div>
+
+<form asp-controller="Holiday" asp-action="Create" method="post">
+    <div class="form-group">
+        <label asp-for="DateOfHoliday">Date</label>
+        <input asp-for="DateOfHoliday" type="date" asp-format="{0:yyyy-MM-dd}" class="form-control" />
+        <span asp-validation-for="DateOfHoliday" class="text-danger"></span>
+    </div>
+    <div class="form-group">
+        <label asp-for="NameOfHoliday">Name</label>
+        <input asp-for="NameOfHoliday" class="form-control" />
+        <span asp-validation-for="NameOfHoliday" class="text-danger"></span>
+    </div>
+    <button type="submit" class="btn btn-primary">Submit</button>
+</form> 
