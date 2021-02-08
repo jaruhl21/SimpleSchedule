@@ -13,5 +13,7 @@ namespace SimpleSchedule.ViewModels
         public int SickDaysLeft { get; set; }
         public int SickDaysUsed { get; set; }
         public IEnumerable<Request> requests { get; set; }
+        public IEnumerable<ApplicationUser> applicationUsers { get; set; }
+        public IEnumerable<Request> allRequests { get; set; }
     }
 }
