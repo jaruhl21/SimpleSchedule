@@ -82,7 +82,7 @@ namespace SimpleSchedule.Controllers
                 SickDaysUsed = user.SickDaysUsed,
                 requests = requestRepository.GetAllRequests(userManager.GetUserId(HttpContext.User)),
                 applicationUsers = userManager.Users.ToList(),
-                allRequests = requestRepository.GetAllRequestsAdmin()
+                allRequests = requestRepository.GetOthersRequests(userManager.GetUserId(HttpContext.User))
             };
             return View(model);
         }

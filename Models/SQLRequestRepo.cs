@@ -43,6 +43,11 @@ namespace SimpleSchedule.Models
             return context.Requests.OrderBy(r => r.StartDate);
         }
 
+        public IEnumerable<Request> GetOthersRequests(string UserId)
+        {
+            return context.Requests.Where(r => r.ApplicationUserID != UserId).OrderBy(r => r.StartDate);
+        }
+
         public Request GetRequest(int RequestId)
         {
             return context.Requests.Find(RequestId);
