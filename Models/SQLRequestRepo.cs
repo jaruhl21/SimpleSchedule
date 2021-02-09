@@ -8,6 +8,7 @@ namespace SimpleSchedule.Models
     public class SQLRequestRepo : IRequestRepository
     {
         private readonly AppDbContext context;
+        private DateTime current = DateTime.Now;
 
         public SQLRequestRepo(AppDbContext context)
         {
@@ -35,7 +36,7 @@ namespace SimpleSchedule.Models
 
         public IEnumerable<Request> GetAllRequests(string UserId)
         {
-            return context.Requests.Where(r => r.ApplicationUserID == UserId).OrderBy(r => r.StartDate);
+            return context.Requests.Where(r => r.ApplicationUserID == UserId && r.EndDate > current).OrderBy(r => r.StartDate);
         }
 
         public IEnumerable<Request> GetAllRequestsAdmin()
@@ -45,7 +46,7 @@ namespace SimpleSchedule.Models
 
         public IEnumerable<Request> GetOthersRequests(string UserId)
         {
-            return context.Requests.Where(r => r.ApplicationUserID != UserId).OrderBy(r => r.StartDate);
+            return context.Requests.Where(r => r.ApplicationUserID != UserId && r.EndDate > current).OrderBy(r => r.StartDate);
         }
 
         public Request GetRequest(int RequestId)

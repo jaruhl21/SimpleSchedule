@@ -1,6 +1,17 @@
 ﻿@model HolidayIndexViewModel
+@inject SignInManager<ApplicationUser> signInManager
 
-<a asp-controller="Holiday" asp-action="Create" class="btn btn-primary">New Holiday</a>
+@{
+    ViewBag.PageTitle = "Holidays";
+}
+
+@if (signInManager.IsSignedIn(User))
+{
+    @if (User.IsInRole("Admin"))
+    {
+        <a asp-controller="Holiday" asp-action="Create" class="btn btn-primary" style="margin: 10px;">New Holiday</a>
+    }
+}
 
 @if (Model.holidays.Any())
 {
@@ -10,8 +21,14 @@
                 <tr>
                     <th>Date</th>
                     <th>Holiday</th>
-                    <th>Edit</th>
-                    <th>Delete</th>
+                    @if (signInManager.IsSignedIn(User))
+                    {
+                        @if (User.IsInRole("Admin"))
+                        {
+                            <th>Edit</th>
+                            <th>Delete</th>
+                        }
+                    }
                 </tr>
             </thead>
             <tbody>
@@ -20,12 +37,18 @@
                     <tr>
                         <td>@hol.DateOfHoliday.ToString("d")</td>
                         <td>@hol.NameOfHoliday</td>
-                        <td><a asp-controller="Holiday" asp-action="Edit" asp-route-id="@hol.HolidayID" class="btn btn-info">Edit</a></td>
-                        <td>
-                            <form method="post" asp-controller="Holiday" asp-action="Delete" asp-route-id="@hol.HolidayID">
-                                <button type="submit" class="btn btn-danger" onclick="return confirm('Are you sure you want to delete Request ID: @hol.DateOfHoliday?')">Delete</button>
-                            </form>
-                        </td>
+                        @if (signInManager.IsSignedIn(User))
+                        {
+                            @if (User.IsInRole("Admin"))
+                            {
+                                <td><a asp-controller="Holiday" asp-action="Edit" asp-route-id="@hol.HolidayID" class="btn btn-info">Edit</a></td>
+                                <td>
+                                    <form method="post" asp-controller="Holiday" asp-action="Delete" asp-route-id="@hol.HolidayID">
+                                        <button type="submit" class="btn btn-danger" onclick="return confirm('Are you sure you want to delete Request ID: @hol.DateOfHoliday?')">Delete</button>
+                                    </form>
+                                </td>
+                            }
+                        }
                     </tr>
                 }
             </tbody>
@@ -34,5 +57,5 @@
 }
 else
 {
-    <h2>No Holidays Yet</h2>
+    <h2>No Upcoming Holidays</h2>
 }

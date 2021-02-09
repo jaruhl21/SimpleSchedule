@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using SimpleSchedule.Models;
 using SimpleSchedule.Utilities;
@@ -69,12 +70,14 @@ namespace SimpleSchedule.Controllers
         }
 
         [HttpGet]
+        [Authorize(Roles = "Admin")]
         public ViewResult Create()
         {
             return View();
         }
 
         [HttpPost]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Create(Holiday holiday)
         {
             if (ModelState.IsValid)
@@ -90,6 +93,7 @@ namespace SimpleSchedule.Controllers
         }
 
         [HttpGet]
+        [Authorize(Roles = "Admin")]
         public ViewResult Edit(int Id)
         {
             Holiday holiday = holidayRepository.GetHoliday(Id);
@@ -104,6 +108,7 @@ namespace SimpleSchedule.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Edit(EditHolidayViewModel holidayChange)
         {
             if (ModelState.IsValid)
@@ -129,6 +134,7 @@ namespace SimpleSchedule.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Delete(int Id)
         {
             DateTime holidayDate = holidayRepository.GetHoliday(Id).DateOfHoliday;

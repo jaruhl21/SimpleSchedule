@@ -1,5 +1,9 @@
 ﻿@model Holiday
 
+@{
+    ViewBag.PageTitle = "New Holidays";
+}
+
 <div asp-validation-summary="All" class="text-danger"></div>
 
 <form asp-controller="Holiday" asp-action="Create" method="post">
