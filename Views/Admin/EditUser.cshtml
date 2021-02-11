@@ -35,6 +35,20 @@
         </div>
     </div>
     <div class="form-group row">
+        <label asp-for="NextYearVacationDaysLeft" class="col-sm-2 col-form-label"></label>
+        <div class="col-sm-10">
+            <input asp-for="NextYearVacationDaysLeft" class="form-control">
+            <span asp-validation-for="NextYearVacationDaysLeft" class="text-danger"></span>
+        </div>
+    </div>
+    <div class="form-group row">
+        <label asp-for="NextYearVacationDaysUsed" class="col-sm-2 col-form-label"></label>
+        <div class="col-sm-10">
+            <input asp-for="NextYearVacationDaysUsed" class="form-control">
+            <span asp-validation-for="NextYearVacationDaysUsed" class="text-danger"></span>
+        </div>
+    </div>
+    <div class="form-group row">
         <label asp-for="SickDaysLeft" class="col-sm-2 col-form-label"></label>
         <div class="col-sm-10">
             <input asp-for="SickDaysLeft" class="form-control">
@@ -67,12 +81,12 @@
             {
                 foreach (var role in Model.Roles)
                 {
-                    <h5 class="card-title">@role</h5>
+            <h5 class="card-title">@role</h5>
                 }
             }
             else
             {
-                <h5 class="card-title">None at the moment</h5>
+            <h5 class="card-title">None at the moment</h5>
             }
         </div>
         <div class="card-footer">

@@ -23,7 +23,14 @@
                 <label asp-for="StartDate">Start of Personal/Vacation Time</label>
                 @if (Model.StartDate > current)
                 {
-                    <input asp-for="StartDate" type="date" asp-format="{0:yyyy-MM-dd}" min="@current.ToString("yyyy-MM-dd")" max="@current.Year-12-31" class="form-control" />
+                    if (Model.StartDate.Year == current.Year)
+                    {
+                        <input asp-for="StartDate" type="date" asp-format="{0:yyyy-MM-dd}" min="@current.ToString("yyyy-MM-dd")" max="@current.Year-12-31" class="form-control" />
+                    }
+                    else
+                    {
+                        <input asp-for="StartDate" type="date" asp-format="{0:yyyy-MM-dd}" min="@Model.StartDate.Year-01-01" max="@Model.StartDate.Year-12-31" class="form-control" />
+                    }
                 }
                 else
                 {
@@ -38,7 +45,14 @@
             </div>
             <div class="form-group">
                 <label asp-for="EndDate">End of Personal/Vacation Time</label>
-                <input asp-for="EndDate" type="date" asp-format="{0:yyyy-MM-dd}" min="@current.ToString("yyyy-MM-dd")" max="@current.Year-12-31" class="form-control" />
+                @if (Model.EndDate.Year == current.Year)
+                {
+                    <input asp-for="EndDate" type="date" asp-format="{0:yyyy-MM-dd}" min="@current.ToString("yyyy-MM-dd")" max="@current.Year-12-31" class="form-control" />
+                }
+                else
+                {
+                    <input asp-for="EndDate" type="date" asp-format="{0:yyyy-MM-dd}" min="@Model.StartDate.Year-01-01" max="@Model.StartDate.Year-12-31" class="form-control" />
+                }
                 <span asp-validation-for="EndDate" class="text-danger"></span>
             </div>
         </div>

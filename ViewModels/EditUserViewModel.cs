@@ -22,11 +22,17 @@ namespace SimpleSchedule.ViewModels
         [Display(Name = "Personal/Vacation Days Left")]
         public int VacationDaysLeft { get; set; }
 
+        [Display(Name = "Personal/Vacation Days Left for Next Year")]
+        public int NextYearVacationDaysLeft { get; set; }
+
         [Display(Name = "Sick Days Left")]
         public int SickDaysLeft { get; set; }
 
         [Display(Name = "Personal/Vacation Days Used")]
         public int VacationDaysUsed { get; set; }
+
+        [Display(Name = "Personal/Vacation Days Used for Next Year")]
+        public int NextYearVacationDaysUsed { get; set; }
 
         [Display(Name = "Sick Days Used")]
         public int SickDaysUsed { get; set; }

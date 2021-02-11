@@ -215,6 +215,8 @@ namespace SimpleSchedule.Controllers
                 Email = user.Email,
                 VacationDaysLeft = user.VacationDaysLeft,
                 VacationDaysUsed = user.VacationDaysUsed,
+                NextYearVacationDaysLeft = user.NextYearVacationDaysLeft,
+                NextYearVacationDaysUsed = user.NextYearVacationDaysUsed,
                 SickDaysLeft = user.SickDaysLeft,
                 SickDaysUsed = user.SickDaysUsed,
                 Roles = userRoles
@@ -236,7 +238,11 @@ namespace SimpleSchedule.Controllers
             else
             {
                 user.VacationDaysLeft = model.VacationDaysLeft;
+                user.VacationDaysUsed = model.VacationDaysUsed;
+                user.NextYearVacationDaysLeft = model.NextYearVacationDaysLeft;
+                user.NextYearVacationDaysUsed = model.NextYearVacationDaysUsed;
                 user.SickDaysLeft = model.SickDaysLeft;
+                user.SickDaysUsed = model.SickDaysUsed;
 
                 var result = await userManager.UpdateAsync(user);
 

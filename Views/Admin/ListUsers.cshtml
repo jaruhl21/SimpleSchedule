@@ -2,6 +2,7 @@
 
 @{
     ViewBag.PageTitle = "All Users";
+    DateTime current = DateTime.Now;
 }
 
 <h1>All Users</h1>
@@ -13,8 +14,10 @@
 			<thead class="thead-dark text-center">
                 <tr>
                     <th>User Email</th>
-                    <th>Vacation Days Left</th>
-                    <th>Vacation Days Used</th>
+                    <th>@(current.Year) Days Left</th>
+                    <th>@(current.Year) Days Used</th>
+                    <th>@(current.Year+1) Days Left</th>
+                    <th>@(current.Year+1) Days Used</th>
                     <th>Sick Days Left</th>
                     <th>Sick Days Used</th>
                     <th>Edit</th>
@@ -28,6 +31,8 @@
 						<td>@user.Email</td>
 						<td class="text-center">@user.VacationDaysLeft</td>
 						<td class="text-center">@user.VacationDaysUsed</td>
+						<td class="text-center">@user.NextYearVacationDaysLeft</td>
+						<td class="text-center">@user.NextYearVacationDaysUsed</td>
 						<td class="text-center">@user.SickDaysLeft</td>
                         <td class="text-center">@user.SickDaysUsed</td>
 						<td class="text-center"><a asp-action="EditUser" asp-controller="Admin" asp-route-id="@user.Id" class="btn btn-info">Edit</a></td>

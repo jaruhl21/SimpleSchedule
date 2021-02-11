@@ -47,7 +47,7 @@ namespace SimpleSchedule.Controllers
                 double vdld = Math.Round(vdl);
                 float sdl = 5 * daysLeftPercent;
                 double sdld = Math.Round(sdl);
-                var user = new ApplicationUser { UserName = model.Email, Email = model.Email, VacationDaysLeft = Convert.ToInt32(vdld), SickDaysLeft = Convert.ToInt32(sdld) };
+                var user = new ApplicationUser { UserName = model.Email, Email = model.Email, VacationDaysLeft = Convert.ToInt32(vdld), SickDaysLeft = Convert.ToInt32(sdld), NextYearVacationDaysLeft = 10 };
                 var result = await userManager.CreateAsync(user, model.Password);
 
                 if (result.Succeeded)
