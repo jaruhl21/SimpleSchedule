@@ -120,19 +120,28 @@ namespace SimpleSchedule.Controllers
                 {
                     ModelState.AddModelError("", "End Date must be after Start Date.");
                 }
-                else if (request.StartDate.Year != request.EndDate.Year)
-                {
-                    ModelState.AddModelError("", "Request cannot span multiple years. Please make two seperate requests; one for this year and another for next year.");
-                }
-                else
+                else if (request.StartDate.Year == request.EndDate.Year)
                 {
                     int daysOff = WeekdayDifference(request.StartDate, request.EndDate, holidayRepository);
                     if (request.EndDate.Year == DateTime.Now.Year)
                     {
-                        if (user.VacationDaysLeft > daysOff)
+                        if (user.VacationDaysLeft >= daysOff)
                         {
                             user.VacationDaysLeft = user.VacationDaysLeft - daysOff;
                             user.VacationDaysUsed = user.VacationDaysUsed + daysOff;
+
+                            // Send Emails
+                            string[] otherUserEmails = getOtherUserEmails(user);
+                            if (otherUserEmails.Any())
+                            {
+                                var otherUsersMessage = new Message(otherUserEmails, user.Email + " Has Scheduled Time Off", user.Email + " has scheduled time off for " + request.StartDate.ToShortDateString() + " thru " + request.EndDate.ToShortDateString() + ".<br><br>Please add it to your calendar.", "#", "");
+                                await emailSender.SendEmailAsync(otherUsersMessage);
+                            }
+
+                            await emailTimeOffSummary(user, "scheduled time off for " + request.StartDate.ToShortDateString() + " thru " + request.EndDate.ToShortDateString() + ". ");
+
+                            Request newRequest = requestRepository.Add(request);
+                            return RedirectToAction("index");
                         }
                         else
                         {
@@ -145,24 +154,29 @@ namespace SimpleSchedule.Controllers
                         {
                             user.NextYearVacationDaysLeft = user.NextYearVacationDaysLeft - daysOff;
                             user.NextYearVacationDaysUsed = user.NextYearVacationDaysUsed + daysOff;
+
+                            // Send Emails
+                            string[] otherUserEmails = getOtherUserEmails(user);
+                            if (otherUserEmails.Any())
+                            {
+                                var otherUsersMessage = new Message(otherUserEmails, user.Email + " Has Scheduled Time Off", user.Email + " has scheduled time off for " + request.StartDate.ToShortDateString() + " thru " + request.EndDate.ToShortDateString() + ".<br><br>Please add it to your calendar.", "#", "");
+                                await emailSender.SendEmailAsync(otherUsersMessage);
+                            }
+
+                            await emailTimeOffSummary(user, "scheduled time off for " + request.StartDate.ToShortDateString() + " thru " + request.EndDate.ToShortDateString() + ". ");
+
+                            Request newRequest = requestRepository.Add(request);
+                            return RedirectToAction("index");
                         }
                         else
                         {
                             ModelState.AddModelError("", "You do not have enough Vacation Days Left for this request. Please shorten your request or talk to Arif.");
                         }
                     }
-                    // Send Emails
-                    string[] otherUserEmails = getOtherUserEmails(user);
-                    if (otherUserEmails.Any())
-                    {
-                        var otherUsersMessage = new Message(otherUserEmails, user.Email + " Has Scheduled Time Off", user.Email + " has scheduled time off for " + request.StartDate.ToShortDateString() + " thru " + request.EndDate.ToShortDateString() + ".<br><br>Please add it to your calendar.", "#", "");
-                        await emailSender.SendEmailAsync(otherUsersMessage);
-                    }
-
-                    await emailTimeOffSummary(user, "scheduled time off for " + request.StartDate.ToShortDateString() + " thru " + request.EndDate.ToShortDateString() + ". ");
-
-                    Request newRequest = requestRepository.Add(request);
-                    return RedirectToAction("index");
+                }
+                else
+                {
+                    ModelState.AddModelError("", "Request cannot span multiple years. Please make two seperate requests; one for this year and another for next year.");
                 }
             }
 

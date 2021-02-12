@@ -86,7 +86,7 @@ namespace SimpleSchedule.Controllers
             earlyRelease.ApplicationUserID = userManager.GetUserId(HttpContext.User);
 
             DateTime today = DateTime.Today;
-            if (today.DayOfWeek == DayOfWeek.Sunday || today.DayOfWeek == DayOfWeek.Tuesday || today.DayOfWeek == DayOfWeek.Wednesday || today.DayOfWeek == DayOfWeek.Thursday)
+            if (today.DayOfWeek == DayOfWeek.Monday || today.DayOfWeek == DayOfWeek.Tuesday || today.DayOfWeek == DayOfWeek.Wednesday || today.DayOfWeek == DayOfWeek.Thursday)
             {
                 today = today.AddHours(18);
             }
