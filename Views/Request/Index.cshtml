@@ -17,28 +17,6 @@
     </div>
 </div>
 
-<h1>My Summary</h1>
-<div class="row text-center" style="padding: 30px 0px;">
-    <div class="col-md-4">
-        <h4>Personal/Vacation Days Left</h4>
-        <h5 class="card-title">@Model.VacationDaysLeft days</h5>
-        <h4>Personal/Vacation Days Used</h4>
-        <h5 class="card-title">@Model.VacationDaysUsed days</h5>
-    </div>
-    <div class="col-md-4">
-        <h4>@(current.Year+1) Days Left</h4>
-        <h5 class="card-title">@Model.NextYearVacationDaysLeft days</h5>
-        <h4>@(current.Year+1) Days Used</h4>
-        <h5 class="card-title">@Model.NextYearVacationDaysUsed days</h5>
-    </div>
-    <div class="col-md-4">
-        <h4>Sick Days Left</h4>
-        <h5 class="card-title">@Model.SickDaysLeft days</h5>
-        <h4>Sick Days Used</h4>
-        <h5 class="card-title">@Model.SickDaysUsed days</h5>
-    </div>
-</div>
-
 <h1>My Requests</h1>
 @if (Model.requests.Any())
 {
@@ -49,6 +27,7 @@
                     <th>ID</th>
                     <th>Start Date</th>
                     <th>End Date</th>
+                    <th>Type</th>
                     <th>Edit</th>
                     <th>Delete</th>
                 </tr>
@@ -60,12 +39,25 @@
                         <td>@req.RequestId</td>
                         <td>@req.StartDate.ToString("d")</td>
                         <td>@req.EndDate.ToString("d")</td>
-                        <td><a asp-controller="Request" asp-action="Edit" asp-route-id="@req.RequestId" class="btn btn-info">Edit</a></td>
-                        <td>
-                            <form method="post" asp-controller="Request" asp-action="Delete" asp-route-id="@req.RequestId">
-                                <button type="submit" class="btn btn-danger" onclick="return confirm('Are you sure you want to delete Request ID: @req.RequestId?')">Delete</button>
-                            </form>
-                        </td>
+                        <td>@req.SpecialCase</td>
+                        @if (req.EndDate > current)
+                        {
+                            <td><a asp-controller="Request" asp-action="Edit" asp-route-id="@req.RequestId" class="btn btn-info">Edit</a></td>
+                            <td>
+                                <form method="post" asp-controller="Request" asp-action="Delete" asp-route-id="@req.RequestId">
+                                    <button type="submit" class="btn btn-danger" onclick="return confirm('Are you sure you want to delete Request ID: @req.RequestId?')">Delete</button>
+                                </form>
+                            </td>
+                        }
+                        else
+                        {
+                            <td><button class="btn btn-info" disabled>Edit</button></td>
+                            <td>
+                                <form method="post" asp-controller="Request" asp-action="Delete" asp-route-id="@req.RequestId">
+                                    <button type="submit" class="btn btn-danger" onclick="return confirm('Are you sure you want to delete Request ID: @req.RequestId?')" disabled>Delete</button>
+                                </form>
+                            </td>
+                        }
                     </tr>
                 }
             </tbody>
@@ -87,6 +79,7 @@ else
                     <th>User Email</th>
                     <th>Start Date</th>
                     <th>End Date</th>
+                    <th>Type</th>
                 </tr>
             </thead>
             <tbody>
@@ -97,6 +90,14 @@ else
                         <td>@requestUser.Email</td>
                         <td class="text-center">@singleRequest.StartDate.ToShortDateString()</td>
                         <td class="text-center">@singleRequest.EndDate.ToShortDateString()</td>
+                        @if (singleRequest.SpecialCase.Contains("Personal"))
+                        {
+                            <td>Personal/Vacation</td>
+                        }
+                        else
+                        {
+                            <td>@singleRequest.SpecialCase</td>
+                        }
                     </tr>
                 }
             </tbody>

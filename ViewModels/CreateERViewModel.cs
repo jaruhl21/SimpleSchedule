@@ -10,5 +10,7 @@ namespace SimpleSchedule.ViewModels
     public class CreateERViewModel : EarlyRelease
     {
         public string ApplicationUserId { get; set; }
+        public DateTime AdjustmentDate { get; set; }
+        public DateTime AdjustmentTime { get; set; }
     }
 }

@@ -109,77 +109,140 @@ namespace SimpleSchedule.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> Create(Request request)
+        public async Task<IActionResult> Create(CreateRequestViewModel model)
         {
-            request.ApplicationUserID = userManager.GetUserId(HttpContext.User);
+            model.ApplicationUserID = userManager.GetUserId(HttpContext.User);
             if (ModelState.IsValid)
             {
                 var user = await userManager.GetUserAsync(HttpContext.User);
 
-                if (request.StartDate > request.EndDate)
+                if (model.StartDate > model.EndDate)
                 {
                     ModelState.AddModelError("", "End Date must be after Start Date.");
                 }
-                else if (request.StartDate.Year == request.EndDate.Year)
+                else
                 {
-                    int daysOff = WeekdayDifference(request.StartDate, request.EndDate, holidayRepository);
-                    if (request.EndDate.Year == DateTime.Now.Year)
+                    if (model.SpecialCase == "Business Trip")
                     {
-                        if (user.VacationDaysLeft >= daysOff)
+                        // Send Emails
+                        string[] otherUserEmails = getOtherUserEmails(user);
+                        if (otherUserEmails.Any())
                         {
-                            user.VacationDaysLeft = user.VacationDaysLeft - daysOff;
-                            user.VacationDaysUsed = user.VacationDaysUsed + daysOff;
-
-                            // Send Emails
-                            string[] otherUserEmails = getOtherUserEmails(user);
-                            if (otherUserEmails.Any())
-                            {
-                                var otherUsersMessage = new Message(otherUserEmails, user.Email + " Has Scheduled Time Off", user.Email + " has scheduled time off for " + request.StartDate.ToShortDateString() + " thru " + request.EndDate.ToShortDateString() + ".<br><br>Please add it to your calendar.", "#", "");
-                                await emailSender.SendEmailAsync(otherUsersMessage);
-                            }
-
-                            await emailTimeOffSummary(user, "scheduled time off for " + request.StartDate.ToShortDateString() + " thru " + request.EndDate.ToShortDateString() + ". ");
-
-                            Request newRequest = requestRepository.Add(request);
-                            return RedirectToAction("index");
+                            var otherUsersMessage = new Message(otherUserEmails, user.Email + " Has Scheduled A Business Trip", user.Email + " has scheduled a business trip for " + model.StartDate.ToShortDateString() + " thru " + model.EndDate.ToShortDateString() + " to visit " + model.BusinessTripLocation + ".<br><br>Please add it to your calendar.", "#", "");
+                            await emailSender.SendEmailAsync(otherUsersMessage);
                         }
-                        else
+
+                        await emailTimeOffSummary(user, "scheduled a business trip for " + model.StartDate.ToShortDateString() + " thru " + model.EndDate.ToShortDateString() + " to visit " + model.BusinessTripLocation + ". ");
+
+                        Request newRequest = new Request
                         {
-                            ModelState.AddModelError("", "You do not have enough Vacation Days Left for this request. Please shorten your request or talk to Arif.");
+                            ApplicationUserID = model.ApplicationUserID,
+                            StartDate = model.StartDate,
+                            EndDate = model.EndDate,
+                            SpecialCase = "Business Trip to " + model.BusinessTripLocation
+                        };
+                        requestRepository.Add(newRequest);
+                        return RedirectToAction("index");
+                    }
+                    else if (model.SpecialCase == "Unpaid")
+                    {
+                        // Send Emails
+                        string[] otherUserEmails = getOtherUserEmails(user);
+                        if (otherUserEmails.Any())
+                        {
+                            var otherUsersMessage = new Message(otherUserEmails, user.Email + " Has Scheduled Time Off", user.Email + " has scheduled time off for " + model.StartDate.ToShortDateString() + " thru " + model.EndDate.ToShortDateString() + ".<br><br>Please add it to your calendar.", "#", "");
+                            await emailSender.SendEmailAsync(otherUsersMessage);
                         }
+
+                        await emailTimeOffSummary(user, "scheduled time off for " + model.StartDate.ToShortDateString() + " thru " + model.EndDate.ToShortDateString() + ". ");
+
+                        Request newRequest = new Request
+                        {
+                            ApplicationUserID = model.ApplicationUserID,
+                            StartDate = model.StartDate,
+                            EndDate = model.EndDate,
+                            SpecialCase = "Unpaid Personal/Vacation"
+                        };
+                        requestRepository.Add(newRequest);
+                        return RedirectToAction("index");
                     }
                     else
                     {
-                        if (user.NextYearVacationDaysLeft > daysOff)
+                        if (model.StartDate.Year == model.EndDate.Year)
                         {
-                            user.NextYearVacationDaysLeft = user.NextYearVacationDaysLeft - daysOff;
-                            user.NextYearVacationDaysUsed = user.NextYearVacationDaysUsed + daysOff;
-
-                            // Send Emails
-                            string[] otherUserEmails = getOtherUserEmails(user);
-                            if (otherUserEmails.Any())
+                            int daysOff = WeekdayDifference(model.StartDate, model.EndDate, holidayRepository);
+                            if (model.EndDate.Year == DateTime.Now.Year)
                             {
-                                var otherUsersMessage = new Message(otherUserEmails, user.Email + " Has Scheduled Time Off", user.Email + " has scheduled time off for " + request.StartDate.ToShortDateString() + " thru " + request.EndDate.ToShortDateString() + ".<br><br>Please add it to your calendar.", "#", "");
-                                await emailSender.SendEmailAsync(otherUsersMessage);
+                                if (user.VacationDaysLeft >= daysOff)
+                                {
+                                    user.VacationDaysLeft -= daysOff;
+                                    user.VacationDaysUsed += daysOff;
+
+                                    // Send Emails
+                                    string[] otherUserEmails = getOtherUserEmails(user);
+                                    if (otherUserEmails.Any())
+                                    {
+                                        var otherUsersMessage = new Message(otherUserEmails, user.Email + " Has Scheduled Time Off", user.Email + " has scheduled time off for " + model.StartDate.ToShortDateString() + " thru " + model.EndDate.ToShortDateString() + ".<br><br>Please add it to your calendar.", "#", "");
+                                        await emailSender.SendEmailAsync(otherUsersMessage);
+                                    }
+
+                                    await emailTimeOffSummary(user, "scheduled time off for " + model.StartDate.ToShortDateString() + " thru " + model.EndDate.ToShortDateString() + ". ");
+
+                                    Request newRequest = new Request
+                                    {
+                                        ApplicationUserID = model.ApplicationUserID,
+                                        StartDate = model.StartDate,
+                                        EndDate = model.EndDate,
+                                        SpecialCase = "Standard Personal/Vacation"
+                                    };
+                                    requestRepository.Add(newRequest);
+                                    return RedirectToAction("index");
+                                }
+                                else
+                                {
+                                    ModelState.AddModelError("", "You do not have enough Vacation Days Left for this request. Please shorten your request or talk to Arif.");
+                                }
                             }
+                            else
+                            {
+                                if (user.NextYearVacationDaysLeft > daysOff)
+                                {
+                                    user.NextYearVacationDaysLeft -= daysOff;
+                                    user.NextYearVacationDaysUsed += daysOff;
 
-                            await emailTimeOffSummary(user, "scheduled time off for " + request.StartDate.ToShortDateString() + " thru " + request.EndDate.ToShortDateString() + ". ");
+                                    // Send Emails
+                                    string[] otherUserEmails = getOtherUserEmails(user);
+                                    if (otherUserEmails.Any())
+                                    {
+                                        var otherUsersMessage = new Message(otherUserEmails, user.Email + " Has Scheduled Time Off", user.Email + " has scheduled time off for " + model.StartDate.ToShortDateString() + " thru " + model.EndDate.ToShortDateString() + ".<br><br>Please add it to your calendar.", "#", "");
+                                        await emailSender.SendEmailAsync(otherUsersMessage);
+                                    }
 
-                            Request newRequest = requestRepository.Add(request);
-                            return RedirectToAction("index");
+                                    await emailTimeOffSummary(user, "scheduled time off for " + model.StartDate.ToShortDateString() + " thru " + model.EndDate.ToShortDateString() + ". ");
+
+                                    Request newRequest = new Request
+                                    {
+                                        ApplicationUserID = model.ApplicationUserID,
+                                        StartDate = model.StartDate,
+                                        EndDate = model.EndDate,
+                                        SpecialCase = "Standard Personal/Vacation"
+                                    };
+                                    requestRepository.Add(newRequest);
+                                    return RedirectToAction("index");
+                                }
+                                else
+                                {
+                                    ModelState.AddModelError("", "You do not have enough Vacation Days Left for this request. Please shorten your request or talk to Arif.");
+                                }
+                            }
                         }
                         else
                         {
-                            ModelState.AddModelError("", "You do not have enough Vacation Days Left for this request. Please shorten your request or talk to Arif.");
+                            ModelState.AddModelError("", "Request cannot span multiple years. Please make two seperate requests; one for this year and another for next year.");
                         }
                     }
                 }
-                else
-                {
-                    ModelState.AddModelError("", "Request cannot span multiple years. Please make two seperate requests; one for this year and another for next year.");
-                }
             }
-
             return View();
         }
 
@@ -195,7 +258,7 @@ namespace SimpleSchedule.Controllers
                 PreviousStartDate = request.StartDate,
                 EndDate = request.EndDate,
                 PreviousEndDate = request.EndDate,
-
+                SpecialCase = request.SpecialCase
             };
             return View(model);
         }
@@ -206,118 +269,157 @@ namespace SimpleSchedule.Controllers
             if (ModelState.IsValid)
             {
                 var user = await userManager.GetUserAsync(HttpContext.User);
-                int newDaysOff = WeekdayDifference(requestUpdate.StartDate, requestUpdate.EndDate, holidayRepository);
-                int previousDaysOff = WeekdayDifference(requestUpdate.PreviousStartDate, requestUpdate.PreviousEndDate, holidayRepository);
-                if (newDaysOff > previousDaysOff)
+                if (requestUpdate.SpecialCase.Contains("Business Trip"))
                 {
-                    if (requestUpdate.EndDate.Year == DateTime.Now.Year)
-                    {
-                        if (user.VacationDaysLeft > (newDaysOff - previousDaysOff))
-                        {
-                            user.VacationDaysLeft = user.VacationDaysLeft - (newDaysOff - previousDaysOff);
-                            user.VacationDaysUsed = user.VacationDaysUsed + (newDaysOff - previousDaysOff);
-                            Request request = requestRepository.GetRequest(requestUpdate.RequestId);
-
-                            string[] otherUserEmails = getOtherUserEmails(user);
-                            if (otherUserEmails.Any())
-                            {
-                                var message = new Message(otherUserEmails, user.Email + " Has Modified Their Time Off", user.Email + " has modifieded their time off.<br><br>Previous time off: " + request.StartDate.ToShortDateString() + " thru " + request.EndDate.ToShortDateString() + "<br>Updated time off: " + requestUpdate.StartDate.ToShortDateString() + " thru " + requestUpdate.EndDate.ToShortDateString() + ".<br><br>Please update your calendar.", "#", "");
-                                await emailSender.SendEmailAsync(message);
-                            }
-
-                            request.StartDate = requestUpdate.StartDate;
-                            request.EndDate = requestUpdate.EndDate;
-                            request.ApplicationUserID = requestUpdate.ApplicationUserID;
-
-                            await emailTimeOffSummary(user, "modified time off from " + requestUpdate.PreviousStartDate.ToShortDateString() + " thru " + requestUpdate.PreviousEndDate.ToShortDateString() + " to " + request.StartDate.ToShortDateString() + " thru " + request.EndDate.ToShortDateString() + ". ");
-
-                            requestRepository.Update(request);
-                            return RedirectToAction("index");
-                        }
-                        else
-                        {
-                            ModelState.AddModelError("", "You do not have enough Vacation Days Left for this request. Please shorten your request or talk to Arif.");
-                        }
-                    }
-                    else
-                    {
-                        if (user.NextYearVacationDaysLeft > (newDaysOff - previousDaysOff))
-                        {
-                            user.NextYearVacationDaysLeft = user.NextYearVacationDaysLeft - (newDaysOff - previousDaysOff);
-                            user.NextYearVacationDaysUsed = user.NextYearVacationDaysUsed + (newDaysOff - previousDaysOff);
-                            Request request = requestRepository.GetRequest(requestUpdate.RequestId);
-
-                            string[] otherUserEmails = getOtherUserEmails(user);
-                            if (otherUserEmails.Any())
-                            {
-                                var message = new Message(otherUserEmails, user.Email + " Has Modified Their Time Off", user.Email + " has modifieded their time off.<br><br>Previous time off: " + request.StartDate.ToShortDateString() + " thru " + request.EndDate.ToShortDateString() + "<br>Updated time off: " + requestUpdate.StartDate.ToShortDateString() + " thru " + requestUpdate.EndDate.ToShortDateString() + ".<br><br>Please update your calendar.", "#", "");
-                                await emailSender.SendEmailAsync(message);
-                            }
-
-                            request.StartDate = requestUpdate.StartDate;
-                            request.EndDate = requestUpdate.EndDate;
-                            request.ApplicationUserID = requestUpdate.ApplicationUserID;
-
-                            await emailTimeOffSummary(user, "modified time off from " + requestUpdate.PreviousStartDate.ToShortDateString() + " thru " + requestUpdate.PreviousEndDate.ToShortDateString() + " to " + request.StartDate.ToShortDateString() + " thru " + request.EndDate.ToShortDateString() + ". ");
-
-                            requestRepository.Update(request);
-                            return RedirectToAction("index");
-                        }
-                        else
-                        {
-                            ModelState.AddModelError("", "You do not have enough Vacation Days Left for this request. Please shorten your request or talk to Arif.");
-                        }
-                    }
-                }
-                else if (previousDaysOff > newDaysOff)
-                {
-                    if (requestUpdate.EndDate.Year == DateTime.Now.Year)
-                    {
-                        user.VacationDaysLeft = user.VacationDaysLeft + (previousDaysOff - newDaysOff);
-                        user.VacationDaysUsed = user.VacationDaysUsed - (previousDaysOff - newDaysOff);
-                    }
-                    else
-                    {
-                        user.NextYearVacationDaysLeft = user.NextYearVacationDaysLeft + (previousDaysOff - newDaysOff);
-                        user.NextYearVacationDaysUsed = user.NextYearVacationDaysUsed - (previousDaysOff - newDaysOff);
-                    }
                     Request request = requestRepository.GetRequest(requestUpdate.RequestId);
+                    request.StartDate = requestUpdate.StartDate;
+                    request.EndDate = requestUpdate.EndDate;
+                    requestRepository.Update(request);
 
+                    // Send emails
                     string[] otherUserEmails = getOtherUserEmails(user);
                     if (otherUserEmails.Any())
                     {
-                        var message = new Message(otherUserEmails, user.Email + " Has Modified Their Time Off", user.Email + " has modifieded their time off.<br><br>Previous time off: " + request.StartDate.ToShortDateString() + " thru " + request.EndDate.ToShortDateString() + "<br>Updated time off: " + requestUpdate.StartDate.ToShortDateString() + " thru " + requestUpdate.EndDate.ToShortDateString() + ".<br><br>Please update your calendar.", "#", "");
+                        var message = new Message(otherUserEmails, user.Email + " Has Modified Their Business Trip", user.Email + " has modifieded their Business Trip.<br><br>Previous trip: " + requestUpdate.PreviousStartDate.ToShortDateString() + " thru " + requestUpdate.PreviousEndDate.ToShortDateString() + "<br>Updated trip: " + request.StartDate.ToShortDateString() + " thru " + request.EndDate.ToShortDateString() + ".<br><br>Please update your calendar.", "#", "");
                         await emailSender.SendEmailAsync(message);
                     }
+                    await emailTimeOffSummary(user, "modified " + request.SpecialCase + " from " + requestUpdate.PreviousStartDate.ToShortDateString() + " thru " + requestUpdate.PreviousEndDate.ToShortDateString() + " to " + request.StartDate.ToShortDateString() + " thru " + request.EndDate.ToShortDateString() + ". ");
 
+                    return RedirectToAction("index");
+                }
+                else if (requestUpdate.SpecialCase.Contains("Unpaid"))
+                {
+                    Request request = requestRepository.GetRequest(requestUpdate.RequestId);
                     request.StartDate = requestUpdate.StartDate;
                     request.EndDate = requestUpdate.EndDate;
-                    request.ApplicationUserID = requestUpdate.ApplicationUserID;
-
-                    await emailTimeOffSummary(user, "modified time off from " + requestUpdate.PreviousStartDate.ToShortDateString() + " thru " + requestUpdate.PreviousEndDate.ToShortDateString() + " to " + request.StartDate.ToShortDateString() + " thru " + request.EndDate.ToShortDateString() + ". ");
-
                     requestRepository.Update(request);
+
+                    // Send emails
+                    string[] otherUserEmails = getOtherUserEmails(user);
+                    if (otherUserEmails.Any())
+                    {
+                        var message = new Message(otherUserEmails, user.Email + " Has Modified Their Time Off", user.Email + " has modifieded their time off.<br><br>Previous time off: " + requestUpdate.PreviousStartDate.ToShortDateString() + " thru " + requestUpdate.PreviousEndDate.ToShortDateString() + "<br>Updated time off: " + request.StartDate.ToShortDateString() + " thru " + request.EndDate.ToShortDateString() + ".<br><br>Please update your calendar.", "#", "");
+                        await emailSender.SendEmailAsync(message);
+                    }
+                    await emailTimeOffSummary(user, "modified " + request.SpecialCase + " time off from " + requestUpdate.PreviousStartDate.ToShortDateString() + " thru " + requestUpdate.PreviousEndDate.ToShortDateString() + " to " + request.StartDate.ToShortDateString() + " thru " + request.EndDate.ToShortDateString() + ". ");
+
                     return RedirectToAction("index");
                 }
                 else
                 {
-                    Request request = requestRepository.GetRequest(requestUpdate.RequestId);
-
-                    string[] otherUserEmails = getOtherUserEmails(user);
-                    if (otherUserEmails.Any())
+                    int newDaysOff = WeekdayDifference(requestUpdate.StartDate, requestUpdate.EndDate, holidayRepository);
+                    int previousDaysOff = WeekdayDifference(requestUpdate.PreviousStartDate, requestUpdate.PreviousEndDate, holidayRepository);
+                    if (newDaysOff > previousDaysOff)
                     {
-                        var message = new Message(otherUserEmails, user.Email + " Has Modified Their Time Off", user.Email + " has modifieded their time off.<br><br>Previous time off: " + request.StartDate.ToShortDateString() + " thru " + request.EndDate.ToShortDateString() + "<br>Updated time off: " + requestUpdate.StartDate.ToShortDateString() + " thru " + requestUpdate.EndDate.ToShortDateString() + ".<br><br>Please update your calendar.", "#", "");
-                        await emailSender.SendEmailAsync(message);
+                        if (requestUpdate.EndDate.Year == DateTime.Now.Year)
+                        {
+                            if (user.VacationDaysLeft > (newDaysOff - previousDaysOff))
+                            {
+                                user.VacationDaysLeft = user.VacationDaysLeft - (newDaysOff - previousDaysOff);
+                                user.VacationDaysUsed = user.VacationDaysUsed + (newDaysOff - previousDaysOff);
+                                Request request = requestRepository.GetRequest(requestUpdate.RequestId);
+
+                                string[] otherUserEmails = getOtherUserEmails(user);
+                                if (otherUserEmails.Any())
+                                {
+                                    var message = new Message(otherUserEmails, user.Email + " Has Modified Their Time Off", user.Email + " has modifieded their time off.<br><br>Previous time off: " + request.StartDate.ToShortDateString() + " thru " + request.EndDate.ToShortDateString() + "<br>Updated time off: " + requestUpdate.StartDate.ToShortDateString() + " thru " + requestUpdate.EndDate.ToShortDateString() + ".<br><br>Please update your calendar.", "#", "");
+                                    await emailSender.SendEmailAsync(message);
+                                }
+
+                                request.StartDate = requestUpdate.StartDate;
+                                request.EndDate = requestUpdate.EndDate;
+                                request.ApplicationUserID = requestUpdate.ApplicationUserID;
+
+                                await emailTimeOffSummary(user, "modified time off from " + requestUpdate.PreviousStartDate.ToShortDateString() + " thru " + requestUpdate.PreviousEndDate.ToShortDateString() + " to " + request.StartDate.ToShortDateString() + " thru " + request.EndDate.ToShortDateString() + ". ");
+
+                                requestRepository.Update(request);
+                                return RedirectToAction("index");
+                            }
+                            else
+                            {
+                                ModelState.AddModelError("", "You do not have enough Vacation Days Left for this request. Please shorten your request or talk to Arif.");
+                            }
+                        }
+                        else
+                        {
+                            if (user.NextYearVacationDaysLeft > (newDaysOff - previousDaysOff))
+                            {
+                                user.NextYearVacationDaysLeft = user.NextYearVacationDaysLeft - (newDaysOff - previousDaysOff);
+                                user.NextYearVacationDaysUsed = user.NextYearVacationDaysUsed + (newDaysOff - previousDaysOff);
+                                Request request = requestRepository.GetRequest(requestUpdate.RequestId);
+
+                                string[] otherUserEmails = getOtherUserEmails(user);
+                                if (otherUserEmails.Any())
+                                {
+                                    var message = new Message(otherUserEmails, user.Email + " Has Modified Their Time Off", user.Email + " has modifieded their time off.<br><br>Previous time off: " + request.StartDate.ToShortDateString() + " thru " + request.EndDate.ToShortDateString() + "<br>Updated time off: " + requestUpdate.StartDate.ToShortDateString() + " thru " + requestUpdate.EndDate.ToShortDateString() + ".<br><br>Please update your calendar.", "#", "");
+                                    await emailSender.SendEmailAsync(message);
+                                }
+
+                                request.StartDate = requestUpdate.StartDate;
+                                request.EndDate = requestUpdate.EndDate;
+                                request.ApplicationUserID = requestUpdate.ApplicationUserID;
+
+                                await emailTimeOffSummary(user, "modified time off from " + requestUpdate.PreviousStartDate.ToShortDateString() + " thru " + requestUpdate.PreviousEndDate.ToShortDateString() + " to " + request.StartDate.ToShortDateString() + " thru " + request.EndDate.ToShortDateString() + ". ");
+
+                                requestRepository.Update(request);
+                                return RedirectToAction("index");
+                            }
+                            else
+                            {
+                                ModelState.AddModelError("", "You do not have enough Vacation Days Left for this request. Please shorten your request or talk to Arif.");
+                            }
+                        }
                     }
+                    else if (previousDaysOff > newDaysOff)
+                    {
+                        if (requestUpdate.EndDate.Year == DateTime.Now.Year)
+                        {
+                            user.VacationDaysLeft = user.VacationDaysLeft + (previousDaysOff - newDaysOff);
+                            user.VacationDaysUsed = user.VacationDaysUsed - (previousDaysOff - newDaysOff);
+                        }
+                        else
+                        {
+                            user.NextYearVacationDaysLeft = user.NextYearVacationDaysLeft + (previousDaysOff - newDaysOff);
+                            user.NextYearVacationDaysUsed = user.NextYearVacationDaysUsed - (previousDaysOff - newDaysOff);
+                        }
+                        Request request = requestRepository.GetRequest(requestUpdate.RequestId);
 
-                    request.StartDate = requestUpdate.StartDate;
-                    request.EndDate = requestUpdate.EndDate;
-                    request.ApplicationUserID = requestUpdate.ApplicationUserID;
+                        string[] otherUserEmails = getOtherUserEmails(user);
+                        if (otherUserEmails.Any())
+                        {
+                            var message = new Message(otherUserEmails, user.Email + " Has Modified Their Time Off", user.Email + " has modifieded their time off.<br><br>Previous time off: " + request.StartDate.ToShortDateString() + " thru " + request.EndDate.ToShortDateString() + "<br>Updated time off: " + requestUpdate.StartDate.ToShortDateString() + " thru " + requestUpdate.EndDate.ToShortDateString() + ".<br><br>Please update your calendar.", "#", "");
+                            await emailSender.SendEmailAsync(message);
+                        }
 
-                    await emailTimeOffSummary(user, "modified time off from " + requestUpdate.PreviousStartDate.ToShortDateString() + " thru " + requestUpdate.PreviousEndDate.ToShortDateString() + " to " + request.StartDate.ToShortDateString() + " thru " + request.EndDate.ToShortDateString() + ". ");
+                        request.StartDate = requestUpdate.StartDate;
+                        request.EndDate = requestUpdate.EndDate;
+                        request.ApplicationUserID = requestUpdate.ApplicationUserID;
 
-                    requestRepository.Update(request);
-                    return RedirectToAction("index");
+                        await emailTimeOffSummary(user, "modified time off from " + requestUpdate.PreviousStartDate.ToShortDateString() + " thru " + requestUpdate.PreviousEndDate.ToShortDateString() + " to " + request.StartDate.ToShortDateString() + " thru " + request.EndDate.ToShortDateString() + ". ");
+
+                        requestRepository.Update(request);
+                        return RedirectToAction("index");
+                    }
+                    else
+                    {
+                        Request request = requestRepository.GetRequest(requestUpdate.RequestId);
+
+                        string[] otherUserEmails = getOtherUserEmails(user);
+                        if (otherUserEmails.Any())
+                        {
+                            var message = new Message(otherUserEmails, user.Email + " Has Modified Their Time Off", user.Email + " has modifieded their time off.<br><br>Previous time off: " + request.StartDate.ToShortDateString() + " thru " + request.EndDate.ToShortDateString() + "<br>Updated time off: " + requestUpdate.StartDate.ToShortDateString() + " thru " + requestUpdate.EndDate.ToShortDateString() + ".<br><br>Please update your calendar.", "#", "");
+                            await emailSender.SendEmailAsync(message);
+                        }
+
+                        request.StartDate = requestUpdate.StartDate;
+                        request.EndDate = requestUpdate.EndDate;
+                        request.ApplicationUserID = requestUpdate.ApplicationUserID;
+
+                        await emailTimeOffSummary(user, "modified time off from " + requestUpdate.PreviousStartDate.ToShortDateString() + " thru " + requestUpdate.PreviousEndDate.ToShortDateString() + " to " + request.StartDate.ToShortDateString() + " thru " + request.EndDate.ToShortDateString() + ". ");
+
+                        requestRepository.Update(request);
+                        return RedirectToAction("index");
+                    }
                 }
             }
             return View(requestUpdate);
@@ -328,29 +430,62 @@ namespace SimpleSchedule.Controllers
         {
             Request request = requestRepository.GetRequest(Id);
             var user = await userManager.GetUserAsync(HttpContext.User);
-            int daysOff = WeekdayDifference(request.StartDate, request.EndDate, holidayRepository);
-            if (request.EndDate.Year == DateTime.Now.Year)
+            if (request.SpecialCase.Contains("Business"))
             {
-                user.VacationDaysLeft = user.VacationDaysLeft + daysOff;
-                user.VacationDaysUsed = user.VacationDaysUsed - daysOff;
+                // Send Emails
+                string[] otherUserEmails = getOtherUserEmails(user);
+                if (otherUserEmails.Any())
+                {
+                    var message = new Message(otherUserEmails, user.Email + " Has Cancelled Their Business Trip", user.Email + " has cancelled their business trip.<br><br>Previous trip: " + request.StartDate.ToShortDateString() + " thru " + request.EndDate.ToShortDateString() + ".<br><br>Please remove this from your calendar.", "#", "");
+                    await emailSender.SendEmailAsync(message);
+                }
+
+                await emailTimeOffSummary(user, "deleted " + request.SpecialCase + " for " + request.StartDate.ToShortDateString() + " thru " + request.EndDate.ToShortDateString() + ". ");
+
+                requestRepository.Delete(Id);
+                return RedirectToAction("index");
+            }
+            else if (request.SpecialCase.Contains("Unpaid"))
+            {
+                // Send Emails
+                string[] otherUserEmails = getOtherUserEmails(user);
+                if (otherUserEmails.Any())
+                {
+                    var message = new Message(otherUserEmails, user.Email + " Has Cancelled Their Time Off", user.Email + " has cancelled their time off.<br><br>Previous time off: " + request.StartDate.ToShortDateString() + " thru " + request.EndDate.ToShortDateString() + ".<br><br>Please remove this from your calendar.", "#", "");
+                    await emailSender.SendEmailAsync(message);
+                }
+
+                await emailTimeOffSummary(user, "deleted " + request.SpecialCase + " time off for " + request.StartDate.ToShortDateString() + " thru " + request.EndDate.ToShortDateString() + ". ");
+
+                requestRepository.Delete(Id);
+                return RedirectToAction("index");
             }
             else
             {
-                user.NextYearVacationDaysLeft = user.NextYearVacationDaysLeft + daysOff;
-                user.NextYearVacationDaysUsed = user.NextYearVacationDaysUsed - daysOff;
-            }
-            // Send Emails
-            string[] otherUserEmails = getOtherUserEmails(user);
-            if (otherUserEmails.Any())
-            {
-                var message = new Message(otherUserEmails, user.Email + " Has Cancelled Their Time Off", user.Email + " has cancelled their time off.<br><br>Previous time off: " + request.StartDate.ToShortDateString() + " thru " + request.EndDate.ToShortDateString() + ".<br><br>Please remove this from your calendar.", "#", "");
-                await emailSender.SendEmailAsync(message);
-            }
+                int daysOff = WeekdayDifference(request.StartDate, request.EndDate, holidayRepository);
+                if (request.EndDate.Year == DateTime.Now.Year)
+                {
+                    user.VacationDaysLeft = user.VacationDaysLeft + daysOff;
+                    user.VacationDaysUsed = user.VacationDaysUsed - daysOff;
+                }
+                else
+                {
+                    user.NextYearVacationDaysLeft = user.NextYearVacationDaysLeft + daysOff;
+                    user.NextYearVacationDaysUsed = user.NextYearVacationDaysUsed - daysOff;
+                }
+                // Send Emails
+                string[] otherUserEmails = getOtherUserEmails(user);
+                if (otherUserEmails.Any())
+                {
+                    var message = new Message(otherUserEmails, user.Email + " Has Cancelled Their Time Off", user.Email + " has cancelled their time off.<br><br>Previous time off: " + request.StartDate.ToShortDateString() + " thru " + request.EndDate.ToShortDateString() + ".<br><br>Please remove this from your calendar.", "#", "");
+                    await emailSender.SendEmailAsync(message);
+                }
 
-            await emailTimeOffSummary(user, "deleted time off for " + request.StartDate.ToShortDateString() + " thru " + request.EndDate.ToShortDateString() + ". ");
+                await emailTimeOffSummary(user, "deleted time off for " + request.StartDate.ToShortDateString() + " thru " + request.EndDate.ToShortDateString() + ". ");
 
-            requestRepository.Delete(Id);
-            return RedirectToAction("index");
+                requestRepository.Delete(Id);
+                return RedirectToAction("index");
+            }
         }
 
         public async Task<IActionResult> CallInSickFull()
@@ -359,35 +494,103 @@ namespace SimpleSchedule.Controllers
             {
                 var user = await userManager.GetUserAsync(HttpContext.User);
 
-                string[] otherUserEmails = getOtherUserEmails(user);
-                if (otherUserEmails.Any())
-                {
-                    var message = new Message(otherUserEmails, user.Email + " Is Taking A Sick Day", user.Email + " has called in sick for the whole day. Please note their absence and let any customers know.", "#", "");
-                    await emailSender.SendEmailAsync(message);
-                }
-
                 if (user.SickDaysLeft > 0)
                 {
+                    string[] otherUserEmails = getOtherUserEmails(user);
+                    if (otherUserEmails.Any())
+                    {
+                        var message = new Message(otherUserEmails, user.Email + " Is Taking A Sick Day", user.Email + " has called in sick for the whole day. Please note their absence and let any customers know.", "#", "");
+                        await emailSender.SendEmailAsync(message);
+                    }
+
                     user.SickDaysLeft -= 1;
+                    user.SickDaysUsed += 1;
+
+                    await emailTimeOffSummary(user, "called in sick for the day. ");
+
+                    var result = await userManager.UpdateAsync(user);
+                    return RedirectToAction("index");
                 }
-                user.SickDaysUsed += 1;
+                else
+                {
+                    string[] otherUserEmails = getOtherUserEmails(user);
+                    if (otherUserEmails.Any())
+                    {
+                        var message = new Message(otherUserEmails, user.Email + " Is Taking A Sick Day", user.Email + " has called in sick for the whole day. Please note their absence and let any customers know.", "#", "");
+                        await emailSender.SendEmailAsync(message);
+                    }
 
-                await emailTimeOffSummary(user, "called in sick for the day. ");
+                    await emailTimeOffSummary(user, "called in sick for the day by using an Unpaid Vacation Day because there are no Sick Days Left. ");
 
-                var result = await userManager.UpdateAsync(user);
-                return RedirectToAction("index");
+                    Request newRequest = new Request
+                    {
+                        ApplicationUserID = user.Id,
+                        StartDate = DateTime.Today,
+                        EndDate = DateTime.Today,
+                        SpecialCase = "Unpaid Personal/Vacation (Sick)"
+                    };
+                    requestRepository.Add(newRequest);
+                    return RedirectToAction("index");
+                }
             }
             return RedirectToAction("index");
         }
 
         [Authorize(Roles = "Admin")]
-        public IActionResult AdminIndex()
+        public IActionResult AdminIndex(string searchString, DateTime searchStartDate, DateTime searchEndDate)
         {
+            ViewData["NameFilter"] = searchString;
+            ViewData["StartDateFilter"] = searchStartDate;
+            ViewData["EndDateFilter"] = searchEndDate;
+
+            DateTime searchdatestart = new DateTime(2020, 1, 1);
+
             AdminIndexViewModel model = new AdminIndexViewModel
             {
                 applicationUsers = userManager.Users.ToList(),
-                requests = requestRepository.GetAllRequestsAdmin()
+                requests = requestRepository.GetAllRequestsAdmin(),
+                Message = "No Requests at the moment."
             };
+
+            List<Request> requestsList = model.requests.ToList();
+
+            if (!String.IsNullOrEmpty(searchString))
+            {
+                var searchusers = model.applicationUsers.Where(s => s.Email.Contains(searchString)).ToList();
+                foreach (var req in requestsList.ToArray())
+                {
+                    if (!searchusers.Contains(model.applicationUsers.First(s => s.Id == req.ApplicationUserID)))
+                    {
+                        requestsList.Remove(req);
+                        model.Message = "No Results from search";
+                    }
+                }
+            }
+            if (searchStartDate > searchdatestart)
+            {
+                foreach (var req in requestsList.ToArray())
+                {
+                    if (req.EndDate < searchStartDate)
+                    {
+                        requestsList.Remove(req);
+                        model.Message = "No Results from search";
+                    }
+                }
+            }
+            if (searchEndDate > searchdatestart)
+            {
+                foreach (var req in requestsList.ToArray())
+                {
+                    if (req.StartDate > searchEndDate)
+                    {
+                        requestsList.Remove(req);
+                        model.Message = "No Results from search";
+                    }
+                }
+            }
+
+            model.requests = requestsList.AsEnumerable();
+
             return View(model);
         }
 

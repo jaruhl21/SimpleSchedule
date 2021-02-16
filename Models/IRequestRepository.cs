@@ -9,6 +9,7 @@ namespace SimpleSchedule.Models
     {
         Request GetRequest(int RequestId);
         IEnumerable<Request> GetAllRequests(string UserId);
+        IEnumerable<Request> GetRequestsAdmin(string UserId);
         IEnumerable<Request> GetAllRequestsAdmin();
         IEnumerable<Request> GetOthersRequests(string UserId);
         Request Add(Request request);

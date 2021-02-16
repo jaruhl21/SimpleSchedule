@@ -60,13 +60,37 @@ namespace SimpleSchedule.Controllers
             return changes;
         }
 
-        public IActionResult Index()
+        public async Task<IActionResult> Index()
         {
             HolidayIndexViewModel model = new HolidayIndexViewModel
             {
                 holidays = holidayRepository.GetAllHolidays()
             };
+            
+            if (!model.holidays.Any())
+            {
+                await noHolidaysAlert();
+            }
+
             return View(model);
+        }
+
+        private async Task<int> noHolidaysAlert()
+        {
+            List<string> adminEmails = new List<string>();
+            foreach (var user in userManager.Users.ToList())
+            {
+                if (await userManager.IsInRoleAsync(user, "Admin"))
+                {
+                    adminEmails.Add(user.Email);
+                }
+            }
+            if (adminEmails.Any())
+            {
+                var adminMessage = new Message(adminEmails, "No Upcoming Holidays Set", "Please set up more holidays if there are any in the near future. You may continue to get this alert until at least 1 future Holiday is set up.", "#", "");
+                await emailSender.SendEmailAsync(adminMessage);
+            }
+            return 1;
         }
 
         [HttpGet]

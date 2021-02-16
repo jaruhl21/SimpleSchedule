@@ -10,5 +10,6 @@ namespace SimpleSchedule.ViewModels
     {
         public IEnumerable<ApplicationUser> applicationUsers { get; set; }
         public IEnumerable<Request> requests { get; set; }
+        public string Message { get; set; }
     }
 }

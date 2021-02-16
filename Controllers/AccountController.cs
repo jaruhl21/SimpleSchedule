@@ -236,5 +236,11 @@ namespace SimpleSchedule.Controllers
             // Display validation errors if model state is not valid
             return View(model);
         }
+
+        public async Task<IActionResult> Index()
+        {
+            var user = await userManager.GetUserAsync(HttpContext.User);
+            return View(user);
+        }
     }
 }

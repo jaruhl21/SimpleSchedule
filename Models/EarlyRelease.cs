@@ -10,6 +10,8 @@ namespace SimpleSchedule.Models
     {
         public int EarlyReleaseID { get; set; }
         [Required]
+        public string AdjustmentType { get; set; }
+        [Required]
         public DateTime EarlyReleaseDateTime { get; set; }
         public float TimeMissed { get; set; }
         public string Reason { get; set; }

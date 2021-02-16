@@ -8,6 +8,18 @@
 
 @if (Model.requests.Any())
 {
+    <form asp-action="AdminIndex" method="get">
+        <div class="form-actions no-color">
+            <p>
+                Email: <input type="text" name="SearchString" value="@ViewData["NameFilter"]" />
+                Start Date: <input type="date" name="searchStartDate" value="@ViewData["StartDateFilter"]" />
+                End Date: <input type="date" name="searchEndDate" value="@ViewData["EndDateFilter"]" />
+                <button type="submit" value="Search" class="btn btn-primary">Search</button> |
+                <a asp-action="AdminIndex" class="btn btn-info">Full List</a>
+            </p>
+        </div>
+    </form>
+
     <div class="table-responsive">
         <table class="table table-striped table-hover">
             <thead class="thead-dark text-center">
@@ -15,6 +27,7 @@
                     <th>User Email</th>
                     <th>Start Date</th>
                     <th>End Date</th>
+                    <th>Type</th>
                 </tr>
             </thead>
             <tbody>
@@ -25,6 +38,7 @@
                         <td>@requestUser.Email</td>
                         <td class="text-center">@singleRequest.StartDate.ToShortDateString()</td>
                         <td class="text-center">@singleRequest.EndDate.ToShortDateString()</td>
+                        <td>@singleRequest.SpecialCase</td>
                     </tr>
                 }
             </tbody>
@@ -33,5 +47,9 @@
 }
 else
 {
-    <h2>No Personal/Vacation Requests at the moment.</h2>
+    <h2>@Model.Message</h2>
+    @if (Model.Message.Contains("No Results"))
+    {
+        <a asp-action="AdminIndex" class="btn btn-info">Full List</a>
+    }
 }

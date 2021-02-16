@@ -54,21 +54,58 @@ namespace SimpleSchedule.Controllers
         }
 
         [Authorize(Roles = "Admin")]
-        public IActionResult AdminIndex(string searchString)
+        public IActionResult AdminIndex(string searchString, DateTime searchStartDate, DateTime searchEndDate)
         {
-            ViewData["CurrentFilter"] = searchString;
-            
+            ViewData["NameFilter"] = searchString;
+            ViewData["StartDateFilter"] = searchStartDate;
+            ViewData["EndDateFilter"] = searchEndDate;
+
+            DateTime searchdatestart = new DateTime(2020, 1, 1);
+
             AdminIndexERViewModel model = new AdminIndexERViewModel
             {
                 applicationUsers = userManager.Users.ToList(),
                 earlyReleases = earlyReleaseRepository.GetAllEarlyReleasesAdmin()
             };
 
+            List<EarlyRelease> ERList = model.earlyReleases.ToList();
+
             if (!String.IsNullOrEmpty(searchString))
             {
-                string filteredUserID = model.applicationUsers.First(s => s.Email.Contains(searchString)).Id;
-                model.earlyReleases = earlyReleaseRepository.GetAllEarlyReleases(filteredUserID);
+                var searchusers = model.applicationUsers.Where(s => s.Email.Contains(searchString)).ToList();
+                foreach (var er in ERList.ToArray())
+                {
+                    if (!searchusers.Contains(model.applicationUsers.First(s => s.Id == er.ApplicationUserID)))
+                    {
+                        ERList.Remove(er);
+                        model.Message = "No Results from search";
+                    }
+                }
             }
+            if (searchStartDate > searchdatestart)
+            {
+                foreach (var er in ERList.ToArray())
+                {
+                    if (er.EarlyReleaseDateTime < searchStartDate)
+                    {
+                        ERList.Remove(er);
+                        model.Message = "No Results from search";
+                    }
+                }
+            }
+            if (searchEndDate > searchdatestart)
+            {
+                foreach (var er in ERList.ToArray())
+                {
+                    if (er.EarlyReleaseDateTime > searchEndDate)
+                    {
+                        ERList.Remove(er);
+                        model.Message = "No Results from search";
+                    }
+                }
+            }
+
+            model.earlyReleases = ERList.AsEnumerable();
 
             return View(model);
         }
@@ -96,42 +133,68 @@ namespace SimpleSchedule.Controllers
             }
             else
             {
-                ModelState.AddModelError("", "You can't call out on a weekend!");
+                ModelState.AddModelError("", "It's the weekend! Try again on a workday.");
             }
 
             if (ModelState.IsValid)
             {
-                float hoursOff = today.Hour - earlyRelease.EarlyReleaseDateTime.Hour;
-                float minutesOff = 0;
-                if (earlyRelease.EarlyReleaseDateTime.Minute == 0) 
-                { 
-                    earlyRelease.TimeMissed = hoursOff; 
+                if (earlyRelease.AdjustmentType == "Show Up Late")
+                {
+                    float hoursOff = earlyRelease.EarlyReleaseDateTime.Hour - 8;
+                    if (earlyRelease.EarlyReleaseDateTime.Minute == 0)
+                    {
+                        hoursOff -= 0.5f;
+                    }
+                    else if (earlyRelease.EarlyReleaseDateTime.Minute == 15)
+                    {
+                        hoursOff -= 0.25f;
+                    }
+                    else if (earlyRelease.EarlyReleaseDateTime.Minute == 45)
+                    {
+                        hoursOff += 0.25f;
+                    }
+
+                    earlyRelease.TimeMissed = hoursOff;
+
+                    string[] otherUserEmails = getOtherUserEmails(user);
+                    if (otherUserEmails.Any())
+                    {
+                        var message = new Message(otherUserEmails, user.Email + " Will Be Arriving At " + earlyRelease.EarlyReleaseDateTime.ToShortTimeString(), user.Email + " will be arriving at " + earlyRelease.EarlyReleaseDateTime.ToShortTimeString() + ". Please note their absence and let any customers know.", "#", "");
+                        await emailSender.SendEmailAsync(message);
+                    }
+
+                    EarlyRelease newER = earlyReleaseRepository.Add(earlyRelease);
+                    return RedirectToAction("Index", "Request");
+                }
+                else if (earlyRelease.AdjustmentType == "Leave Early")
+                {
+                    float hoursOff = today.Hour - earlyRelease.EarlyReleaseDateTime.Hour;
+                    float minutesOff = 0;
+                    if (earlyRelease.EarlyReleaseDateTime.Minute == 0)
+                    {
+                        earlyRelease.TimeMissed = hoursOff;
+                    }
+                    else
+                    {
+                        minutesOff = 60 - earlyRelease.EarlyReleaseDateTime.Minute;
+                        hoursOff = hoursOff + (minutesOff / 60) - 1;
+                        earlyRelease.TimeMissed = hoursOff;
+                    }
+
+                    string[] otherUserEmails = getOtherUserEmails(user);
+                    if (otherUserEmails.Any())
+                    {
+                        var message = new Message(otherUserEmails, user.Email + " Will Be Leaving At " + earlyRelease.EarlyReleaseDateTime.ToShortTimeString(), user.Email + " will be leaving at " + earlyRelease.EarlyReleaseDateTime.ToShortTimeString() + ". Please note their absence and let any customers know.", "#", "");
+                        await emailSender.SendEmailAsync(message);
+                    }
+
+                    EarlyRelease newER = earlyReleaseRepository.Add(earlyRelease);
+                    return RedirectToAction("Index", "Request");
                 }
                 else
                 {
-                    minutesOff = 60 - earlyRelease.EarlyReleaseDateTime.Minute;
-                    hoursOff = hoursOff + (minutesOff / 60) - 1;
-                    earlyRelease.TimeMissed = hoursOff;
+                    ModelState.AddModelError("", "Please choose an option to show late or leave early");
                 }
-
-                string[] otherUserEmails = getOtherUserEmails(user);
-                if (otherUserEmails.Any())
-                {
-                    var message = new Message(otherUserEmails, user.Email + " Will Be Leaving At " + earlyRelease.EarlyReleaseDateTime.ToShortTimeString(), user.Email + " will be leaving at " + earlyRelease.EarlyReleaseDateTime.ToShortTimeString() + ". Please note their absence and let any customers know.", "#", "");
-                    await emailSender.SendEmailAsync(message);
-                }
-
-                var currentUserMessage = new Message(new string[] { user.Email }, "Your New Time Off Summary", "You have submitted that you will be leaving at " + earlyRelease.EarlyReleaseDateTime.ToShortTimeString() + ". Your new summary is below.<br><br>Vacation Days Left: " + user.VacationDaysLeft + "<br>Vacation Days Used: " + user.VacationDaysUsed + "<br>Sick Days Left: " + user.SickDaysLeft + "<br>Sick Days Used: " + user.SickDaysUsed, "#", "");
-                await emailSender.SendEmailAsync(currentUserMessage);
-                await getAdminEmails();
-                if (adminEmails.Any())
-                {
-                    var adminMessage = new Message(adminEmails, user.Email + "'s New Time Off Summary", user.Email + " has submitted that they will be leaving at " + earlyRelease.EarlyReleaseDateTime.ToShortTimeString() + ". Their new summary is below.<br><br>Vacation Days Left: " + user.VacationDaysLeft + "<br>Vacation Days Used: " + user.VacationDaysUsed + "<br>Sick Days Left: " + user.SickDaysLeft + "<br>Sick Days Used: " + user.SickDaysUsed, "#", "");
-                    await emailSender.SendEmailAsync(adminMessage);
-                }
-
-                EarlyRelease newER = earlyReleaseRepository.Add(earlyRelease);
-                return RedirectToAction("Index", "Request");
             }
             return View();
         }
