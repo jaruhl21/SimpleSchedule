@@ -11,7 +11,7 @@ namespace SimpleSchedule.ViewModels
     {
         [Required]
         [EmailAddress]
-        [ValidEmailDomain(allowedDomain: "gmail.com", ErrorMessage = "Email domain must be microtipsusa.com")]
+        [ValidEmailDomain(allowedDomain: "microtipsusa.com", ErrorMessage = "Email domain must be microtipsusa.com")]
         public string Email { get; set; }
         [Required]
         [DataType(DataType.Password)]

@@ -5,15 +5,15 @@
 @model IndexRequestViewModel
 
 <h1>Actions</h1>
-<div class="row text-center" style="padding: 30px 0px;">
-    <div class="col-md-4">
+<div class="row text-center">
+    <div class="col-md-4" style="padding: 30px 0px;">
         <a asp-controller="Request" asp-action="Create" class="btn btn-primary">New Vacation Request</a>
     </div>
-    <div class="col-md-4">
+    <div class="col-md-4" style="padding: 30px 0px;">
         <a asp-controller="Request" asp-action="CallInSickFull" class="btn btn-primary">Take Sick Day</a>
     </div>
-    <div class="col-md-4">
-        <a asp-controller="EarlyRelease" asp-action="Create" class="btn btn-primary">Leave Work Early</a>
+    <div class="col-md-4" style="padding: 30px 0px;">
+        <a asp-controller="EarlyRelease" asp-action="Create" class="btn btn-primary">Show Late / Leave Early</a>
     </div>
 </div>
 
