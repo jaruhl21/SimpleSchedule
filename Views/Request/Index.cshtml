@@ -10,7 +10,9 @@
         <a asp-controller="Request" asp-action="Create" class="btn btn-primary">New Vacation Request</a>
     </div>
     <div class="col-md-4" style="padding: 30px 0px;">
-        <a asp-controller="Request" asp-action="CallInSickFull" class="btn btn-primary">Take Sick Day</a>
+        <form asp-controller="Request" asp-action="CallInSickFull" onsubmit="submitRequest.disabled = true; submitRequest.value = 'Please Wait...'; return true;">
+            <input type="submit" class="btn btn-primary" value="Take Sick Day" name="submitRequest" />
+        </form>
     </div>
     <div class="col-md-4" style="padding: 30px 0px;">
         <a asp-controller="EarlyRelease" asp-action="Create" class="btn btn-primary">Show Late / Leave Early</a>
@@ -44,8 +46,8 @@
                         {
                             <td><a asp-controller="Request" asp-action="Edit" asp-route-id="@req.RequestId" class="btn btn-info">Edit</a></td>
                             <td>
-                                <form method="post" asp-controller="Request" asp-action="Delete" asp-route-id="@req.RequestId">
-                                    <button type="submit" class="btn btn-danger" onclick="return confirm('Are you sure you want to delete Request ID: @req.RequestId?')">Delete</button>
+                                <form method="post" asp-controller="Request" asp-action="Delete" asp-route-id="@req.RequestId" onsubmit="submitRequest.disabled = true; submitRequest.value = 'Please Wait...'; return true;">
+                                    <input type="submit" class="btn btn-danger" value="Delete" name="submitRequest" onclick="return confirm('Are you sure you want to delete Request ID: @req.RequestId?')" />
                                 </form>
                             </td>
                         }

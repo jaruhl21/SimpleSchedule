@@ -8,7 +8,7 @@
 
 <div asp-validation-summary="All" class="text-danger"></div>
 
-<form asp-controller="Request" asp-action="Create" method="post">
+<form asp-controller="Request" asp-action="Create" method="post" onsubmit="submitRequest.disabled = true; submitRequest.value = 'Please Wait...'; return true;">
     <div class="row">
         <div class="form-group col-md-6">
             <label asp-for="StartDate">Start of Personal/Vacation Time</label>
@@ -43,5 +43,6 @@
             <input asp-for="BusinessTripLocation" class="form-control" />
         </div>
     </div>
-    <button type="submit" class="btn btn-primary">Submit Request</button>
+    <input type="submit" class="btn btn-primary" value="Submit Request" name="submitRequest" />
+    @*<button type="submit" class="btn btn-primary">Submit Request</button>*@
 </form>

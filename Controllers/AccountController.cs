@@ -54,7 +54,7 @@ namespace SimpleSchedule.Controllers
                 {
                     var token = await userManager.GenerateEmailConfirmationTokenAsync(user);
                     var confirmationLink = Url.Action("ConfirmEmail", "Account", new { userId = user.Id, token = token }, Request.Scheme);
-                    var message = new Message(new string[] { user.Email }, "Please Confirm Your Account", "Thank you for signing up! Please confirm your account.", confirmationLink, "Confirm Your Account");
+                    var message = new Message(new string[] { user.Email }, "Please Confirm Your Account for SimpleSchedule", "Thank you for signing up for SimpleSchedule! Please confirm your account.", confirmationLink, "Confirm Your Account");
                     await emailSender.SendEmailAsync(message);
 
                     IdentityResult roleResult = null;

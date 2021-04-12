@@ -117,27 +117,30 @@ namespace SimpleSchedule.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> Create(EarlyRelease earlyRelease)
+        public async Task<IActionResult> Create(CreateERViewModel earlyRelease)
         {
             var user = await userManager.GetUserAsync(HttpContext.User);
             earlyRelease.ApplicationUserID = userManager.GetUserId(HttpContext.User);
 
-            DateTime today = DateTime.Today;
-            if (today.DayOfWeek == DayOfWeek.Monday || today.DayOfWeek == DayOfWeek.Tuesday || today.DayOfWeek == DayOfWeek.Wednesday || today.DayOfWeek == DayOfWeek.Thursday)
-            {
-                today = today.AddHours(18);
-            }
-            else if (today.DayOfWeek == DayOfWeek.Friday)
-            {
-                today = today.AddHours(17);
-            }
-            else
-            {
-                ModelState.AddModelError("", "It's the weekend! Try again on a workday.");
-            }
-
             if (ModelState.IsValid)
             {
+                earlyRelease.EarlyReleaseDateTime = earlyRelease.AdjustmentDate.Date.Add(earlyRelease.AdjustmentTime.TimeOfDay);
+
+                DateTime dayToCheck = earlyRelease.EarlyReleaseDateTime.Date;
+                if (dayToCheck.DayOfWeek == DayOfWeek.Monday || dayToCheck.DayOfWeek == DayOfWeek.Tuesday || dayToCheck.DayOfWeek == DayOfWeek.Wednesday || dayToCheck.DayOfWeek == DayOfWeek.Thursday)
+                {
+                    dayToCheck = dayToCheck.AddHours(18);
+                }
+                else if (dayToCheck.DayOfWeek == DayOfWeek.Friday)
+                {
+                    dayToCheck = dayToCheck.AddHours(17);
+                }
+                else
+                {
+                    ModelState.AddModelError("", "It's the weekend! Try again on a workday.");
+                    return View();
+                }
+
                 if (earlyRelease.AdjustmentType == "Show Up Late")
                 {
                     float hoursOff = earlyRelease.EarlyReleaseDateTime.Hour - 8;
@@ -159,16 +162,19 @@ namespace SimpleSchedule.Controllers
                     string[] otherUserEmails = getOtherUserEmails(user);
                     if (otherUserEmails.Any())
                     {
-                        var message = new Message(otherUserEmails, user.Email + " Will Be Arriving At " + earlyRelease.EarlyReleaseDateTime.ToShortTimeString(), user.Email + " will be arriving at " + earlyRelease.EarlyReleaseDateTime.ToShortTimeString() + ". Please note their absence and let any customers know.", "#", "");
+                        var message = new Message(otherUserEmails, user.Email + " Will Be Arriving At " + earlyRelease.EarlyReleaseDateTime.ToShortTimeString() + " On " + earlyRelease.EarlyReleaseDateTime.ToShortDateString(), user.Email + " will be arriving at " + earlyRelease.EarlyReleaseDateTime.ToShortTimeString() + " on " + earlyRelease.EarlyReleaseDateTime.ToShortDateString() + ". Please note their absence and let any customers know.", "#", "");
                         await emailSender.SendEmailAsync(message);
                     }
+
+                    var currentUserMessage = new Message(new string[] { user.Email }, "You submitted an ER", "You have submitted that you will be arriving at " + earlyRelease.EarlyReleaseDateTime.ToShortTimeString() + " on " + earlyRelease.EarlyReleaseDateTime.ToShortDateString() + "<br><br>If this was made in error, please ask an Admin to delete it.", "#", "");
+                    await emailSender.SendEmailAsync(currentUserMessage);
 
                     EarlyRelease newER = earlyReleaseRepository.Add(earlyRelease);
                     return RedirectToAction("Index", "Request");
                 }
                 else if (earlyRelease.AdjustmentType == "Leave Early")
                 {
-                    float hoursOff = today.Hour - earlyRelease.EarlyReleaseDateTime.Hour;
+                    float hoursOff = dayToCheck.Hour - earlyRelease.EarlyReleaseDateTime.Hour;
                     float minutesOff = 0;
                     if (earlyRelease.EarlyReleaseDateTime.Minute == 0)
                     {
@@ -184,9 +190,12 @@ namespace SimpleSchedule.Controllers
                     string[] otherUserEmails = getOtherUserEmails(user);
                     if (otherUserEmails.Any())
                     {
-                        var message = new Message(otherUserEmails, user.Email + " Will Be Leaving At " + earlyRelease.EarlyReleaseDateTime.ToShortTimeString(), user.Email + " will be leaving at " + earlyRelease.EarlyReleaseDateTime.ToShortTimeString() + ". Please note their absence and let any customers know.", "#", "");
+                        var message = new Message(otherUserEmails, user.Email + " Will Be Leaving At " + earlyRelease.EarlyReleaseDateTime.ToShortTimeString() + " On " + earlyRelease.EarlyReleaseDateTime.ToShortDateString(), user.Email + " will be leaving at " + earlyRelease.EarlyReleaseDateTime.ToShortTimeString() + " on " + earlyRelease.EarlyReleaseDateTime.ToShortDateString() + ". Please note their absence and let any customers know.", "#", "");
                         await emailSender.SendEmailAsync(message);
                     }
+
+                    var currentUserMessage = new Message(new string[] { user.Email }, "You submitted an ER", "You have submitted that you will be leaving early at " + earlyRelease.EarlyReleaseDateTime.ToShortTimeString() + " on " + earlyRelease.EarlyReleaseDateTime.ToShortDateString() + "<br><br>If this was made in error, please ask an Admin to delete it.", "#", "");
+                    await emailSender.SendEmailAsync(currentUserMessage);
 
                     EarlyRelease newER = earlyReleaseRepository.Add(earlyRelease);
                     return RedirectToAction("Index", "Request");
@@ -198,5 +207,14 @@ namespace SimpleSchedule.Controllers
             }
             return View();
         }
+
+        [HttpPost]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> Delete(int Id)
+        {
+            earlyReleaseRepository.Delete(Id);
+            return RedirectToAction("AdminIndex");
+        }
+
     }
 }

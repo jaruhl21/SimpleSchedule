@@ -124,6 +124,15 @@ namespace SimpleSchedule.Controllers
                 {
                     if (model.SpecialCase == "Business Trip")
                     {
+                        Request newRequest = new Request
+                        {
+                            ApplicationUserID = model.ApplicationUserID,
+                            StartDate = model.StartDate,
+                            EndDate = model.EndDate,
+                            SpecialCase = "Business Trip to " + model.BusinessTripLocation
+                        };
+                        requestRepository.Add(newRequest);
+
                         // Send Emails
                         string[] otherUserEmails = getOtherUserEmails(user);
                         if (otherUserEmails.Any())
@@ -134,18 +143,19 @@ namespace SimpleSchedule.Controllers
 
                         await emailTimeOffSummary(user, "scheduled a business trip for " + model.StartDate.ToShortDateString() + " thru " + model.EndDate.ToShortDateString() + " to visit " + model.BusinessTripLocation + ". ");
 
+                        return RedirectToAction("index");
+                    }
+                    else if (model.SpecialCase == "Unpaid")
+                    {
                         Request newRequest = new Request
                         {
                             ApplicationUserID = model.ApplicationUserID,
                             StartDate = model.StartDate,
                             EndDate = model.EndDate,
-                            SpecialCase = "Business Trip to " + model.BusinessTripLocation
+                            SpecialCase = "Unpaid Personal/Vacation"
                         };
                         requestRepository.Add(newRequest);
-                        return RedirectToAction("index");
-                    }
-                    else if (model.SpecialCase == "Unpaid")
-                    {
+
                         // Send Emails
                         string[] otherUserEmails = getOtherUserEmails(user);
                         if (otherUserEmails.Any())
@@ -156,14 +166,6 @@ namespace SimpleSchedule.Controllers
 
                         await emailTimeOffSummary(user, "scheduled time off for " + model.StartDate.ToShortDateString() + " thru " + model.EndDate.ToShortDateString() + ". ");
 
-                        Request newRequest = new Request
-                        {
-                            ApplicationUserID = model.ApplicationUserID,
-                            StartDate = model.StartDate,
-                            EndDate = model.EndDate,
-                            SpecialCase = "Unpaid Personal/Vacation"
-                        };
-                        requestRepository.Add(newRequest);
                         return RedirectToAction("index");
                     }
                     else
@@ -178,6 +180,15 @@ namespace SimpleSchedule.Controllers
                                     user.VacationDaysLeft -= daysOff;
                                     user.VacationDaysUsed += daysOff;
 
+                                    Request newRequest = new Request
+                                    {
+                                        ApplicationUserID = model.ApplicationUserID,
+                                        StartDate = model.StartDate,
+                                        EndDate = model.EndDate,
+                                        SpecialCase = "Standard Personal/Vacation"
+                                    };
+                                    requestRepository.Add(newRequest);
+
                                     // Send Emails
                                     string[] otherUserEmails = getOtherUserEmails(user);
                                     if (otherUserEmails.Any())
@@ -188,14 +199,6 @@ namespace SimpleSchedule.Controllers
 
                                     await emailTimeOffSummary(user, "scheduled time off for " + model.StartDate.ToShortDateString() + " thru " + model.EndDate.ToShortDateString() + ". ");
 
-                                    Request newRequest = new Request
-                                    {
-                                        ApplicationUserID = model.ApplicationUserID,
-                                        StartDate = model.StartDate,
-                                        EndDate = model.EndDate,
-                                        SpecialCase = "Standard Personal/Vacation"
-                                    };
-                                    requestRepository.Add(newRequest);
                                     return RedirectToAction("index");
                                 }
                                 else
@@ -210,6 +213,15 @@ namespace SimpleSchedule.Controllers
                                     user.NextYearVacationDaysLeft -= daysOff;
                                     user.NextYearVacationDaysUsed += daysOff;
 
+                                    Request newRequest = new Request
+                                    {
+                                        ApplicationUserID = model.ApplicationUserID,
+                                        StartDate = model.StartDate,
+                                        EndDate = model.EndDate,
+                                        SpecialCase = "Standard Personal/Vacation"
+                                    };
+                                    requestRepository.Add(newRequest);
+
                                     // Send Emails
                                     string[] otherUserEmails = getOtherUserEmails(user);
                                     if (otherUserEmails.Any())
@@ -220,14 +232,6 @@ namespace SimpleSchedule.Controllers
 
                                     await emailTimeOffSummary(user, "scheduled time off for " + model.StartDate.ToShortDateString() + " thru " + model.EndDate.ToShortDateString() + ". ");
 
-                                    Request newRequest = new Request
-                                    {
-                                        ApplicationUserID = model.ApplicationUserID,
-                                        StartDate = model.StartDate,
-                                        EndDate = model.EndDate,
-                                        SpecialCase = "Standard Personal/Vacation"
-                                    };
-                                    requestRepository.Add(newRequest);
                                     return RedirectToAction("index");
                                 }
                                 else
