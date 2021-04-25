@@ -10,9 +10,10 @@
         <a asp-controller="Request" asp-action="Create" class="btn btn-primary">New Vacation Request</a>
     </div>
     <div class="col-md-4" style="padding: 30px 0px;">
-        <form asp-controller="Request" asp-action="CallInSickFull" onsubmit="submitRequest.disabled = true; submitRequest.value = 'Please Wait...'; return true;">
+        @*<form asp-controller="Request" asp-action="CallInSickFull" onsubmit="submitRequest.disabled = true; submitRequest.value = 'Please Wait...'; return true;">
             <input type="submit" class="btn btn-primary" value="Take Sick Day" name="submitRequest" />
-        </form>
+        </form>*@
+        <a asp-controller="Request" asp-action="CallInSickFull" class="btn btn-primary">Take Sick Day</a>
     </div>
     <div class="col-md-4" style="padding: 30px 0px;">
         <a asp-controller="EarlyRelease" asp-action="Create" class="btn btn-primary">Show Late / Leave Early</a>

@@ -84,6 +84,23 @@ namespace SimpleSchedule.Controllers
             return 1;
         }
 
+        private int conflictCheck(ApplicationUser user, DateTime firstDay, DateTime lastDay)
+        {
+            var requests = requestRepository.GetAllRequests(user.Id);
+            foreach (var req in requests)
+            {
+                if((firstDay >= req.StartDate && firstDay <= req.EndDate) || (lastDay >= req.StartDate && lastDay <= req.EndDate))
+                {
+                    return req.RequestId;
+                }
+                if ((req.StartDate >= firstDay && req.StartDate <= lastDay) || (req.EndDate >= firstDay && req.EndDate <= lastDay))
+                {
+                    return req.RequestId;
+                }
+            }
+            return 0;
+        }
+
         public async Task<IActionResult> Index()
         {
             var user = await userManager.GetUserAsync(HttpContext.User);
@@ -122,6 +139,14 @@ namespace SimpleSchedule.Controllers
                 }
                 else
                 {
+                    var conCheck = conflictCheck(user, model.StartDate, model.EndDate);
+
+                    if (conCheck != 0)
+                    {
+                        ModelState.AddModelError("", "This conflicts with Request ID : " + conCheck);
+                        return View(model);
+                    }
+
                     if (model.SpecialCase == "Business Trip")
                     {
                         Request newRequest = new Request
@@ -273,6 +298,7 @@ namespace SimpleSchedule.Controllers
             if (ModelState.IsValid)
             {
                 var user = await userManager.GetUserAsync(HttpContext.User);
+
                 if (requestUpdate.SpecialCase.Contains("Business Trip"))
                 {
                     Request request = requestRepository.GetRequest(requestUpdate.RequestId);
@@ -492,52 +518,61 @@ namespace SimpleSchedule.Controllers
             }
         }
 
-        public async Task<IActionResult> CallInSickFull()
+        [HttpGet]
+        public ViewResult CallInSickFull()
+        {
+            return View();
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> CallInSickFull(Request sickRequest)
         {
             if (ModelState.IsValid)
             {
                 var user = await userManager.GetUserAsync(HttpContext.User);
 
-                if (user.SickDaysLeft > 0)
+                var conCheck = conflictCheck(user, sickRequest.StartDate, sickRequest.EndDate);
+
+                if (conCheck != 0)
+                {
+                    ModelState.AddModelError("", "This conflicts with Request ID : " + conCheck);
+                    return View(sickRequest);
+                }
+
+                DateTime dayToCheck = sickRequest.StartDate.Date;
+                if (dayToCheck.DayOfWeek == DayOfWeek.Saturday || dayToCheck.DayOfWeek == DayOfWeek.Sunday)
+                {
+                    ModelState.AddModelError("", "Can't call in sick on the weekend! Try again on a workday.");
+                    return View(sickRequest);
+                }
+
+                if (user.SickDaysLeft > 0 || sickRequest.SpecialCase == "Unpaid Personal/Vacation (Sick)")
                 {
                     string[] otherUserEmails = getOtherUserEmails(user);
                     if (otherUserEmails.Any())
                     {
-                        var message = new Message(otherUserEmails, user.Email + " Is Taking A Sick Day", user.Email + " has called in sick for the whole day. Please note their absence and let any customers know.", "#", "");
+                        var message = new Message(otherUserEmails, user.Email + " Is Taking A Sick Day on " + sickRequest.StartDate.ToShortDateString(), user.Email + " has called in sick for the whole day on " + sickRequest.StartDate.ToShortDateString() + ". Please note their absence and let any customers know.", "#", "");
                         await emailSender.SendEmailAsync(message);
                     }
 
-                    user.SickDaysLeft -= 1;
-                    user.SickDaysUsed += 1;
+                    if (sickRequest.SpecialCase == "Sick Day")
+                    {
+                        user.SickDaysLeft -= 1;
+                        user.SickDaysUsed += 1;
+                    }
 
-                    await emailTimeOffSummary(user, "called in sick for the day. ");
+                    await emailTimeOffSummary(user, "called in sick on " + sickRequest.StartDate.ToShortDateString() + ". ");
 
+                    sickRequest.EndDate = sickRequest.StartDate;
+                    sickRequest.ApplicationUserID = user.Id;
+
+                    requestRepository.Add(sickRequest);
                     var result = await userManager.UpdateAsync(user);
                     return RedirectToAction("index");
                 }
-                else
-                {
-                    string[] otherUserEmails = getOtherUserEmails(user);
-                    if (otherUserEmails.Any())
-                    {
-                        var message = new Message(otherUserEmails, user.Email + " Is Taking A Sick Day", user.Email + " has called in sick for the whole day. Please note their absence and let any customers know.", "#", "");
-                        await emailSender.SendEmailAsync(message);
-                    }
-
-                    await emailTimeOffSummary(user, "called in sick for the day by using an Unpaid Vacation Day because there are no Sick Days Left. ");
-
-                    Request newRequest = new Request
-                    {
-                        ApplicationUserID = user.Id,
-                        StartDate = DateTime.Today,
-                        EndDate = DateTime.Today,
-                        SpecialCase = "Unpaid Personal/Vacation (Sick)"
-                    };
-                    requestRepository.Add(newRequest);
-                    return RedirectToAction("index");
-                }
+                ModelState.AddModelError("", "You do not have any Sick Days left. Please change this to Unpaid Personal/Vacation (Sick).");
             }
-            return RedirectToAction("index");
+            return View(sickRequest);
         }
 
         [Authorize(Roles = "Admin")]
