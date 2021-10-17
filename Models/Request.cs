@@ -19,6 +19,7 @@ namespace SimpleSchedule.Models
         [DisplayFormat(DataFormatString = "{0:MM/dd/yyyy}", ApplyFormatInEditMode = true)]
         public DateTime EndDate { get; set; }
         public string SpecialCase { get; set; }
+        public int numOfDays { get; set; }
         public string ApplicationUserID { get; set; }
         public ApplicationUser User { get; set; }
     }

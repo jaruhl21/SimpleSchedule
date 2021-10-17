@@ -28,7 +28,7 @@ namespace SimpleSchedule.Controllers
             this.userManager = userManager;
         }
 
-        private static int WeekdayDifference(DateTime StartDate, DateTime EndDate, IHolidayRepository holidayRepository)
+        public static int WeekdayDifference(DateTime StartDate, DateTime EndDate, IHolidayRepository holidayRepository)
         {
             DateTime thisDate = StartDate;
             int weekDays = 0;
@@ -154,7 +154,8 @@ namespace SimpleSchedule.Controllers
                             ApplicationUserID = model.ApplicationUserID,
                             StartDate = model.StartDate,
                             EndDate = model.EndDate,
-                            SpecialCase = "Business Trip to " + model.BusinessTripLocation
+                            SpecialCase = "Business Trip to " + model.BusinessTripLocation,
+                            numOfDays = WeekdayDifference(model.StartDate, model.EndDate, holidayRepository)
                         };
                         requestRepository.Add(newRequest);
 
@@ -177,7 +178,8 @@ namespace SimpleSchedule.Controllers
                             ApplicationUserID = model.ApplicationUserID,
                             StartDate = model.StartDate,
                             EndDate = model.EndDate,
-                            SpecialCase = "Unpaid Personal/Vacation"
+                            SpecialCase = "Unpaid Personal/Vacation",
+                            numOfDays = WeekdayDifference(model.StartDate, model.EndDate, holidayRepository)
                         };
                         requestRepository.Add(newRequest);
 
@@ -210,7 +212,8 @@ namespace SimpleSchedule.Controllers
                                         ApplicationUserID = model.ApplicationUserID,
                                         StartDate = model.StartDate,
                                         EndDate = model.EndDate,
-                                        SpecialCase = "Standard Personal/Vacation"
+                                        SpecialCase = "Standard Personal/Vacation",
+                                        numOfDays = WeekdayDifference(model.StartDate, model.EndDate, holidayRepository)
                                     };
                                     requestRepository.Add(newRequest);
 
@@ -243,7 +246,8 @@ namespace SimpleSchedule.Controllers
                                         ApplicationUserID = model.ApplicationUserID,
                                         StartDate = model.StartDate,
                                         EndDate = model.EndDate,
-                                        SpecialCase = "Standard Personal/Vacation"
+                                        SpecialCase = "Standard Personal/Vacation",
+                                        numOfDays = WeekdayDifference(model.StartDate, model.EndDate, holidayRepository)
                                     };
                                     requestRepository.Add(newRequest);
 
@@ -304,6 +308,7 @@ namespace SimpleSchedule.Controllers
                     Request request = requestRepository.GetRequest(requestUpdate.RequestId);
                     request.StartDate = requestUpdate.StartDate;
                     request.EndDate = requestUpdate.EndDate;
+                    request.numOfDays = WeekdayDifference(requestUpdate.StartDate, requestUpdate.EndDate, holidayRepository);
                     requestRepository.Update(request);
 
                     // Send emails
@@ -322,6 +327,7 @@ namespace SimpleSchedule.Controllers
                     Request request = requestRepository.GetRequest(requestUpdate.RequestId);
                     request.StartDate = requestUpdate.StartDate;
                     request.EndDate = requestUpdate.EndDate;
+                    request.numOfDays = WeekdayDifference(requestUpdate.StartDate, requestUpdate.EndDate, holidayRepository);
                     requestRepository.Update(request);
 
                     // Send emails
@@ -359,6 +365,7 @@ namespace SimpleSchedule.Controllers
                                 request.StartDate = requestUpdate.StartDate;
                                 request.EndDate = requestUpdate.EndDate;
                                 request.ApplicationUserID = requestUpdate.ApplicationUserID;
+                                request.numOfDays = WeekdayDifference(requestUpdate.StartDate, requestUpdate.EndDate, holidayRepository);
 
                                 await emailTimeOffSummary(user, "modified time off from " + requestUpdate.PreviousStartDate.ToShortDateString() + " thru " + requestUpdate.PreviousEndDate.ToShortDateString() + " to " + request.StartDate.ToShortDateString() + " thru " + request.EndDate.ToShortDateString() + ". ");
 
@@ -388,6 +395,7 @@ namespace SimpleSchedule.Controllers
                                 request.StartDate = requestUpdate.StartDate;
                                 request.EndDate = requestUpdate.EndDate;
                                 request.ApplicationUserID = requestUpdate.ApplicationUserID;
+                                request.numOfDays = WeekdayDifference(requestUpdate.StartDate, requestUpdate.EndDate, holidayRepository);
 
                                 await emailTimeOffSummary(user, "modified time off from " + requestUpdate.PreviousStartDate.ToShortDateString() + " thru " + requestUpdate.PreviousEndDate.ToShortDateString() + " to " + request.StartDate.ToShortDateString() + " thru " + request.EndDate.ToShortDateString() + ". ");
 
@@ -424,6 +432,7 @@ namespace SimpleSchedule.Controllers
                         request.StartDate = requestUpdate.StartDate;
                         request.EndDate = requestUpdate.EndDate;
                         request.ApplicationUserID = requestUpdate.ApplicationUserID;
+                        request.numOfDays = WeekdayDifference(requestUpdate.StartDate, requestUpdate.EndDate, holidayRepository);
 
                         await emailTimeOffSummary(user, "modified time off from " + requestUpdate.PreviousStartDate.ToShortDateString() + " thru " + requestUpdate.PreviousEndDate.ToShortDateString() + " to " + request.StartDate.ToShortDateString() + " thru " + request.EndDate.ToShortDateString() + ". ");
 
@@ -444,6 +453,7 @@ namespace SimpleSchedule.Controllers
                         request.StartDate = requestUpdate.StartDate;
                         request.EndDate = requestUpdate.EndDate;
                         request.ApplicationUserID = requestUpdate.ApplicationUserID;
+                        request.numOfDays = WeekdayDifference(requestUpdate.StartDate, requestUpdate.EndDate, holidayRepository);
 
                         await emailTimeOffSummary(user, "modified time off from " + requestUpdate.PreviousStartDate.ToShortDateString() + " thru " + requestUpdate.PreviousEndDate.ToShortDateString() + " to " + request.StartDate.ToShortDateString() + " thru " + request.EndDate.ToShortDateString() + ". ");
 
@@ -561,10 +571,16 @@ namespace SimpleSchedule.Controllers
                         user.SickDaysUsed += 1;
                     }
 
+                    if (sickRequest.SpecialCase == "Unpaid Personal/Vacation (Sick)")
+                    {
+                        user.SickDaysUsed += 1;
+                    }
+
                     await emailTimeOffSummary(user, "called in sick on " + sickRequest.StartDate.ToShortDateString() + ". ");
 
                     sickRequest.EndDate = sickRequest.StartDate;
                     sickRequest.ApplicationUserID = user.Id;
+                    sickRequest.numOfDays = 1;
 
                     requestRepository.Add(sickRequest);
                     var result = await userManager.UpdateAsync(user);
