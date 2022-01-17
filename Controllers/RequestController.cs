@@ -167,7 +167,7 @@ namespace SimpleSchedule.Controllers
                             await emailSender.SendEmailAsync(otherUsersMessage);
                         }
 
-                        await emailTimeOffSummary(user, "scheduled a business trip for " + model.StartDate.ToShortDateString() + " thru " + model.EndDate.ToShortDateString() + " to visit " + model.BusinessTripLocation + ". ");
+                        await emailTimeOffSummary(user, "scheduled a <b>business trip</b> for " + model.StartDate.ToShortDateString() + " thru " + model.EndDate.ToShortDateString() + " to visit " + model.BusinessTripLocation + ". ");
 
                         return RedirectToAction("index");
                     }
@@ -191,7 +191,7 @@ namespace SimpleSchedule.Controllers
                             await emailSender.SendEmailAsync(otherUsersMessage);
                         }
 
-                        await emailTimeOffSummary(user, "scheduled time off for " + model.StartDate.ToShortDateString() + " thru " + model.EndDate.ToShortDateString() + ". ");
+                        await emailTimeOffSummary(user, "scheduled <b>unpaid time off</b> for " + model.StartDate.ToShortDateString() + " thru " + model.EndDate.ToShortDateString() + ". ");
 
                         return RedirectToAction("index");
                     }
@@ -318,7 +318,7 @@ namespace SimpleSchedule.Controllers
                         var message = new Message(otherUserEmails, user.Email + " Has Modified Their Business Trip", user.Email + " has modifieded their Business Trip.<br><br>Previous trip: " + requestUpdate.PreviousStartDate.ToShortDateString() + " thru " + requestUpdate.PreviousEndDate.ToShortDateString() + "<br>Updated trip: " + request.StartDate.ToShortDateString() + " thru " + request.EndDate.ToShortDateString() + ".<br><br>Please update your calendar.", "#", "");
                         await emailSender.SendEmailAsync(message);
                     }
-                    await emailTimeOffSummary(user, "modified " + request.SpecialCase + " from " + requestUpdate.PreviousStartDate.ToShortDateString() + " thru " + requestUpdate.PreviousEndDate.ToShortDateString() + " to " + request.StartDate.ToShortDateString() + " thru " + request.EndDate.ToShortDateString() + ". ");
+                    await emailTimeOffSummary(user, "modified <b>" + request.SpecialCase + "</b> from " + requestUpdate.PreviousStartDate.ToShortDateString() + " thru " + requestUpdate.PreviousEndDate.ToShortDateString() + " to " + request.StartDate.ToShortDateString() + " thru " + request.EndDate.ToShortDateString() + ". ");
 
                     return RedirectToAction("index");
                 }
@@ -337,7 +337,7 @@ namespace SimpleSchedule.Controllers
                         var message = new Message(otherUserEmails, user.Email + " Has Modified Their Time Off", user.Email + " has modifieded their time off.<br><br>Previous time off: " + requestUpdate.PreviousStartDate.ToShortDateString() + " thru " + requestUpdate.PreviousEndDate.ToShortDateString() + "<br>Updated time off: " + request.StartDate.ToShortDateString() + " thru " + request.EndDate.ToShortDateString() + ".<br><br>Please update your calendar.", "#", "");
                         await emailSender.SendEmailAsync(message);
                     }
-                    await emailTimeOffSummary(user, "modified " + request.SpecialCase + " time off from " + requestUpdate.PreviousStartDate.ToShortDateString() + " thru " + requestUpdate.PreviousEndDate.ToShortDateString() + " to " + request.StartDate.ToShortDateString() + " thru " + request.EndDate.ToShortDateString() + ". ");
+                    await emailTimeOffSummary(user, "modified <b>" + request.SpecialCase + "</b> time off from " + requestUpdate.PreviousStartDate.ToShortDateString() + " thru " + requestUpdate.PreviousEndDate.ToShortDateString() + " to " + request.StartDate.ToShortDateString() + " thru " + request.EndDate.ToShortDateString() + ". ");
 
                     return RedirectToAction("index");
                 }
@@ -480,7 +480,7 @@ namespace SimpleSchedule.Controllers
                     await emailSender.SendEmailAsync(message);
                 }
 
-                await emailTimeOffSummary(user, "deleted " + request.SpecialCase + " for " + request.StartDate.ToShortDateString() + " thru " + request.EndDate.ToShortDateString() + ". ");
+                await emailTimeOffSummary(user, "deleted <b>" + request.SpecialCase + "</b> for " + request.StartDate.ToShortDateString() + " thru " + request.EndDate.ToShortDateString() + ". ");
 
                 requestRepository.Delete(Id);
                 return RedirectToAction("index");
@@ -495,7 +495,7 @@ namespace SimpleSchedule.Controllers
                     await emailSender.SendEmailAsync(message);
                 }
 
-                await emailTimeOffSummary(user, "deleted " + request.SpecialCase + " time off for " + request.StartDate.ToShortDateString() + " thru " + request.EndDate.ToShortDateString() + ". ");
+                await emailTimeOffSummary(user, "deleted <b>" + request.SpecialCase + "</b> time off for " + request.StartDate.ToShortDateString() + " thru " + request.EndDate.ToShortDateString() + ". ");
 
                 requestRepository.Delete(Id);
                 return RedirectToAction("index");
